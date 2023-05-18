@@ -4,7 +4,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Service struct {
+type providerService struct {
 	ServiceId VASService `gorm:"<-;not null;type:uuid;unique;foreignkey:ServiceId;references:ID" json:"service_id"`
 	Price     int        `gorm:"<-;not null" json:"price"`
 }
