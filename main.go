@@ -15,6 +15,12 @@ func main() {
 		panic(err)
 	}
 
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Welcome to APZ-VAS API",
+		})
+	})
+
 	router.Run(":5000")
 
 }
