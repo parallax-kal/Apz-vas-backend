@@ -15,6 +15,6 @@ func main() {
 		panic(err)
 	}
 
-	router.Run("localhost:5000")
+	router.Run(":5000")
 
 }
