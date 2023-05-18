@@ -7,9 +7,8 @@ import (
 )
 
 func main() {
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	// initialize routes
-	// routes.InitializeRoutes(router)
 	_, err := configs.ConnectDb()
 	if err != nil {
 		panic(err)
@@ -21,6 +20,6 @@ func main() {
 		})
 	})
 
-	router.Run(":5000")
+	router.Run("127.0.0.1:5000")
 
 }
