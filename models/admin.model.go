@@ -1,10 +1,12 @@
 package models
 
 type Admin struct {
-	ID       uint   `json:"id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
-	Status   string `json:"status"`
+	ID       uint   `gorm:"<-:create"` // allow read and create
+	Name     string `gorm:"-:all"`
+	Email    string `gorm:"-:all"`
+	Password string `gorm:"-:all"`
+	Role     string `gorm:"-:all"`
+	Status   string `gorm:"-:all"`
+	Updated   int64 `gorm:"autoUpdateTime"` // Use unix nano seconds as updating time
+	Created   int64 `gorm:"autoCreateTime"`      // Use unix seconds as creating time
 }
