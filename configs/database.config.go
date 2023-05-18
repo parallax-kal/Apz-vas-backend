@@ -63,10 +63,6 @@ func ConnectDb() (*gorm.DB, error) {
 	}
 	fmt.Println("Connected to database successfully")
 	DB = db
-	err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error
-	if err != nil {
-		return nil, err
-	}
 	db.AutoMigrate(&models.VASService{})
 	db.AutoMigrate(&models.Admin{})
 	db.AutoMigrate(&models.Customer{})
