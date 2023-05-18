@@ -4,10 +4,10 @@ import (
 	"github.com/google/uuid"
 )
 
-type providerService struct {
-	ServiceId VASService `gorm:"<-;not null;type:uuid;unique;foreignkey:ServiceId;references:ID" json:"service_id"`
-	Price     int        `gorm:"<-;not null" json:"price"`
-}
+// type providerService struct {
+// 	ServiceId VASService `gorm:"<-;not null;type:uuid;unique;foreignkey:ServiceId;references:ID" json:"service_id"`
+// 	Price     int        `gorm:"<-;not null" json:"price"`
+// }
 
 type VASProvider struct {
 	ID       uuid.UUID `gorm:"<-:create;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`

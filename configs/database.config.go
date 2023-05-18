@@ -2,11 +2,11 @@ package configs
 
 import (
 	"apz-vas/models"
-	"os"
 	"fmt"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"os"
 	"strings"
 )
 
@@ -48,7 +48,7 @@ func ConnectDb() (*gorm.DB, error) {
 			if err != nil {
 				return nil, err
 			}
-			// enable uuid 
+			// enable uuid
 			fmt.Println("Connected to database successfully")
 			fmt.Println("Enabling uuid-ossp extension...")
 			err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error
@@ -63,6 +63,10 @@ func ConnectDb() (*gorm.DB, error) {
 	}
 	fmt.Println("Connected to database successfully")
 	DB = db
+	err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error
+	if err != nil {
+		return nil, err
+	}
 	db.AutoMigrate(&models.VASService{})
 	db.AutoMigrate(&models.Admin{})
 	db.AutoMigrate(&models.Customer{})
