@@ -48,12 +48,14 @@ func ConnectDb() (*gorm.DB, error) {
 			if err != nil {
 				return nil, err
 			}
-			// enable uuid extension
+			// enable uuid 
+			fmt.Println("Connected to database successfully")
+			fmt.Println("Enabling uuid-ossp extension...")
 			err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error
 			if err != nil {
 				return nil, err
 			}
-			fmt.Println("Connected to database successfully")
+			fmt.Println("Enabled uuid-ossp extension successfully")
 		} else {
 			return nil, err
 		}
