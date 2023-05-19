@@ -21,5 +21,5 @@ func main() {
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(200, "Welcome to APZ VAS")
 	})
-	router.Run("127.0.0.1:5000")
+	router.Run(":5000")
 }
