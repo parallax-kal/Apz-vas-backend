@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	gin.SetMode(gin.DebugMode)
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	_, err := configs.ConnectDb()
 	if err != nil {
