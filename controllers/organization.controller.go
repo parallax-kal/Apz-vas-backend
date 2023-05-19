@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
 func SignupOrganization() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get the body of the request
@@ -71,7 +70,7 @@ func SignupOrganization() gin.HandlerFunc {
 
 		// Create the organization
 		// tx := configs.DB.Begin()
-		if err :=  configs.DB.Select("Name", "Email", "Password", "Status").Create(&organization).Error; err != nil {
+		if err := configs.DB.Select("Name", "Email", "Password", "Status").Create(&organization).Error; err != nil {
 			// tx.Rollback()
 			c.JSON(400, gin.H{
 				"error":   err.Error(),
@@ -168,6 +167,73 @@ func LoginOrganization() gin.HandlerFunc {
 			"message": "Logged in successfully",
 			"success": true,
 			"token":   token,
+		})
+	}
+}
+
+func CreateOrganization() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var organization models.Organization
+		if err := ctx.ShouldBindJSON(&organization); err != nil {
+			ctx.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+		if organization.Name == "" {
+			ctx.JSON(400, gin.H{
+				"error":   "Name is required",
+				"success": false,
+			})
+			return
+		}
+		if len(organization.Name) < 3 {
+			ctx.JSON(400, gin.H{
+				"error":   "Name must be at least 3 characters",
+				"success": false,
+			})
+			return
+		}
+		// VALIDATE EMAIL
+		emailError := utils.ValidateEmail(organization.Email)
+		if emailError != nil {
+			ctx.JSON(400, gin.H{
+				"error":   emailError.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		if err := configs.DB.Create(&organization).Error; err != nil {
+			ctx.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		ctx.JSON(200, gin.H{
+			"message": "Organization created successfully",
+			"success": true,
+		})
+
+	}
+}
+
+func GetOrganizations() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var organizations []models.Organization
+		if err := configs.DB.Find(&organizations).Error; err != nil {
+			ctx.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+		}
+		ctx.JSON(200, gin.H{
+			"message": "Organizations fetched successfully",
+			"success": true,
+			"data":    organizations,
 		})
 	}
 }

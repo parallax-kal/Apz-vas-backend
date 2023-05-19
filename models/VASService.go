@@ -9,6 +9,6 @@ type VASService struct {
 	Name        string    `gorm:"<-;not null;type:varchar(255)" json:"name"`
 	Description string    `gorm:"<-;not null;type:varchar(255)" json:"description"`
 	Status      string    `gorm:"<-;not null;type:varchar(255);default:Active" json:"status"`
-	Updated     int64     `gorm:"autoUpdateTime" json:"updated"`
-	Created     int64     `gorm:"autoCreateTime" json:"created"`
+	UpdatedAt   int64     `gorm:"autoUpdateTime" json:"updated_at"`
+	CreatedAt   int64     `gorm:"autoCreateTime" json:"created_at"`
 }

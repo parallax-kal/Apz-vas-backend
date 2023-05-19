@@ -16,6 +16,6 @@ type Customer struct {
 	Services     []customerService `gorm:"<-;not null;foreignkey:ServiceId,ProviderId;references:ID,ID" json:"services"`
 	Organization Organization      `gorm:"<-;not null;type:uuid;foreignkey:OrganizationId;references:ID" json:"organization"`
 	Status       string            `gorm:"<-;not null;type:varchar(255);default:Active" json:"status"`
-	Updated      int64             `gorm:"autoUpdateTime" json:"updated"`
-	Created      int64             `gorm:"autoCreateTime" json:"created"`
+	UpdatedAt    int64             `gorm:"autoUpdateTime" json:"updated_at"`
+	CreatedAt    int64             `gorm:"autoCreateTime" json:"created_at"`
 }
