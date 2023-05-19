@@ -9,33 +9,29 @@ import (
 )
 
 type Claims struct {
-	ID uuid.UUID  `json:"id"`
-	Email string `json:"email"`
+	ID    uuid.UUID `json:"id"`
+	// Email string    `json:"email"`
 	jwt.StandardClaims
 }
 
 type Data struct {
-	ID uuid.UUID `json:"id"`
-	Email string `json:"email"`
+	ID    uuid.UUID `json:"id"`
+	// Email string    `json:"email"`
 }
 
-
-
-
 // GenerateToken generates a jwt token for the user
-func GenerateToken(data *Data) (string, error) {
+func GenerateToken(data Data) (string, error) {
 	// Declare the expiration time of the token
 	// Here, we have kept it as 5 minutes
 	expirationTime := time.Now().Add(5 * time.Minute)
 
 	// Create the JWT claims, which includes the username and expiry time
 	claims := &Claims{
-		ID: data.ID,
-		Email: data.Email,
+		ID:    data.ID,
+		// Email: data.Email,
 		StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
 			ExpiresAt: expirationTime.Unix(),
-			
 		},
 	}
 

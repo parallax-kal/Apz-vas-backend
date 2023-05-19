@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"net/mail"
 	"unicode"
 )
@@ -12,17 +13,18 @@ func ValidateEmail(email string) error {
 }
 
 // ValidatePassword validates the password
-func ValidatePassword(password string) string {
+func ValidatePassword(password string) error {
 	if password == "" {
-		return "Password is required"
+		// return error
+		return errors.New("Password is required")
 	}
 	if len(password) < 8 {
-		return "Password must be at least 8 characters"
+		return errors.New("Password must be at least 8 characters")
 	}
 	if !checkPassword(password) {
-		return "Password must have at least one uppercase letter, one lowercase letter, one digit and one special character"
+		return errors.New("Password must contain at least 1 uppercase, 1 lowercase, 1 digit and 1 special character")
 	}
-	return ""
+	return nil
 }
 
 func checkPassword(password string) bool {

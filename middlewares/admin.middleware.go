@@ -1,36 +1,38 @@
 package middlewares
 
 import (
+	"apz-vas/configs"
+	"apz-vas/models"
 	"apz-vas/utils"
-	"fmt"
-	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
 func AdminMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Check if the user has the admin role
 
-		tokenString := c.Request.Header.Get("Authorization")
-		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		data := c.MustGet("data").(utils.Data)
+		var admin models.Admin
+		// search by ID
+		if err := configs.DB.Where("ID = ?", data.ID).First(&admin).Error; err != nil {
+			c.JSON(403, gin.H{
+				"error":   "Unkown Admin",
+				"success": false,
+			})
 			c.Abort()
 			return
 		}
-		data, error := utils.ExtractDataFromToken(tokenString)
-        if error != nil {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-        }
 
-        fmt.Println(data)
-
-		// Implement your logic to check the admin role based on the user role or other criteria
-		isAdmin := true // Example logic, modify as per your requirements
-		if !isAdmin {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		if admin.Status != "Active" {
+			c.JSON(403, gin.H{
+				"error":   "Inactive Admin",
+				"success": false,
+			})
 			c.Abort()
 			return
 		}
+
+		c.Set("admin", admin)
 
 		c.Next()
 	}

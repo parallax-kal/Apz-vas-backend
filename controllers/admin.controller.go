@@ -8,48 +8,43 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-func SignupOrganization() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Get the body of the request
-		var organization models.Organization
-		// Bind the body to the organization var
-		if err := c.ShouldBindJSON(&organization); err != nil {
-			c.JSON(400, gin.H{
+func SignupAdmin() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var admin models.Admin
+		if err := ctx.ShouldBindJSON(&admin); err != nil {
+			ctx.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
 			return
 		}
-
-		if organization.Name == "" {
-			c.JSON(400, gin.H{
+		if admin.Name == "" {
+			ctx.JSON(400, gin.H{
 				"error":   "Name is required",
 				"success": false,
 			})
 			return
 		}
-		if len(organization.Name) < 3 {
-			c.JSON(400, gin.H{
+		if len(admin.Name) < 3 {
+			ctx.JSON(400, gin.H{
 				"error":   "Name must be at least 3 characters",
 				"success": false,
 			})
 			return
 		}
 		// VALIDATE EMAIL
-		emailError := utils.ValidateEmail(organization.Email)
+		emailError := utils.ValidateEmail(admin.Email)
 		if emailError != nil {
-			c.JSON(400, gin.H{
+			ctx.JSON(400, gin.H{
 				"error":   emailError.Error(),
 				"success": false,
 			})
 			return
 		}
 		// VALIDATE PASSWORD
-
-		passwordError := utils.ValidatePassword(organization.Password)
+		passwordError := utils.ValidatePassword(admin.Password)
 		if passwordError != nil {
-			c.JSON(400, gin.H{
+			ctx.JSON(400, gin.H{
 				"error":   passwordError.Error(),
 				"success": false,
 			})
@@ -57,56 +52,51 @@ func SignupOrganization() gin.HandlerFunc {
 		}
 
 		// Hash the password
-		hashedPassword, error := utils.HashPassword(organization.Password)
-		if error != nil {
-			c.JSON(400, gin.H{
-				"error":   error.Error(),
+		hashedPassword, err := utils.HashPassword(admin.Password)
+		if err != nil {
+			ctx.JSON(400, gin.H{
+				"error":   err.Error(),
 				"success": false,
 			})
 			return
 		}
-
-		// Set the hashed password to the organization
-		organization.Password = hashedPassword
-
-		// Create the organization
+		admin.Password = hashedPassword
+		// Create the user
 		// tx := configs.DB.Begin()
-		if err :=  configs.DB.Select("Name", "Email", "Password", "Status").Create(&organization).Error; err != nil {
+		if err := configs.DB.Create(&admin).Error; err != nil {
 			// tx.Rollback()
-			c.JSON(400, gin.H{
+			ctx.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
 			return
 		}
 		// tx.Commit()
-
 		token, err := utils.GenerateToken(
 			utils.Data{
-				ID: organization.ID,
+				ID: admin.ID,
 			},
 		)
-
 		if err != nil {
-			c.JSON(400, gin.H{
+			ctx.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
 			return
 		}
-		c.JSON(200, gin.H{
-			"message": "Organization created successfully",
-			"token":   token,
+		ctx.JSON(200, gin.H{
+			"message": "Admin created successfully",
 			"success": true,
+			"token":   token,
 		})
-	}
 
+	}
 }
 
-func LoginOrganization() gin.HandlerFunc {
+func LoginAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var organization models.Organization
-		if err := c.ShouldBindJSON(&organization); err != nil {
+		var admin models.Admin
+		if err := c.ShouldBindJSON(&admin); err != nil {
 			c.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
@@ -114,7 +104,7 @@ func LoginOrganization() gin.HandlerFunc {
 			return
 		}
 		// VALIDATE EMAIL
-		emailError := utils.ValidateEmail(organization.Email)
+		emailError := utils.ValidateEmail(admin.Email)
 		if emailError != nil {
 			c.JSON(400, gin.H{
 				"error":   emailError.Error(),
@@ -123,8 +113,7 @@ func LoginOrganization() gin.HandlerFunc {
 			return
 		}
 		// VALIDATE PASSWORD
-
-		passwordError := utils.ValidatePassword(organization.Password)
+		passwordError := utils.ValidatePassword(admin.Password)
 		if passwordError != nil {
 			c.JSON(400, gin.H{
 				"error":   passwordError.Error(),
@@ -132,9 +121,8 @@ func LoginOrganization() gin.HandlerFunc {
 			})
 			return
 		}
-		// Get the organization from the database
-		var givenPassword = organization.Password
-		if err := configs.DB.Where("email = ?", organization.Email).First(&organization).Error; err != nil {
+		var givenPassword = admin.Password
+		if err := configs.DB.Where("email = ?", admin.Email).First(&admin).Error; err != nil {
 			c.JSON(400, gin.H{
 				"error":   "Email or password is incorrect",
 				"success": false,
@@ -142,8 +130,8 @@ func LoginOrganization() gin.HandlerFunc {
 			return
 		}
 
-		// Check if the password is correct
-		if err := utils.ComparePassword(givenPassword, organization.Password); err != nil {
+		// Compare the given password with the hashed password that we stored in our database
+		if err := utils.ComparePassword(admin.Password, givenPassword); err != nil {
 			c.JSON(400, gin.H{
 				"error":   "Email or password is incorrect",
 				"success": false,
@@ -151,12 +139,12 @@ func LoginOrganization() gin.HandlerFunc {
 			return
 		}
 
-		// Generate the JWT token
 		token, err := utils.GenerateToken(
 			utils.Data{
-				ID: organization.ID,
+				ID: admin.ID,
 			},
 		)
+
 		if err != nil {
 			c.JSON(400, gin.H{
 				"error":   err.Error(),
@@ -164,10 +152,12 @@ func LoginOrganization() gin.HandlerFunc {
 			})
 			return
 		}
+
 		c.JSON(200, gin.H{
-			"message": "Logged in successfully",
+			"message": "Admin logged in successfully",
 			"success": true,
 			"token":   token,
 		})
+
 	}
 }
