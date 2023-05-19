@@ -28,7 +28,6 @@ func ConnectDb() (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	// if error is about database does not exist, create the database
 	// delete database
-	db.Exec("DROP DATABASE IF EXISTS \"" + DBNAME + "\"")
 	if err != nil {
 		if strings.Contains(err.Error(), "database \""+DBNAME+"\" does not exist") {
 			fmt.Println("Database does not exist, creating database...")
