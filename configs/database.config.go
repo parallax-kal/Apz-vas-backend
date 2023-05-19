@@ -10,9 +10,9 @@ import (
 	"strings"
 )
 
+// ConnectDb connects to the database
 var DB *gorm.DB
 
-// ConnectDb connects to the database
 func ConnectDb() (*gorm.DB, error) {
 	err := godotenv.Load()
 	if err != nil {
@@ -26,8 +26,9 @@ func ConnectDb() (*gorm.DB, error) {
 	fmt.Println("Connecting to database...")
 	dsn := "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " dbname=" + DBNAME + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	// if error is about database does not exist, create the databas
-
+	// if error is about database does not exist, create the database
+	// delete database
+	db.Exec("DROP DATABASE IF EXISTS \"" + DBNAME + "\"")
 	if err != nil {
 		if strings.Contains(err.Error(), "database \""+DBNAME+"\" does not exist") {
 			fmt.Println("Database does not exist, creating database...")
@@ -56,17 +57,23 @@ func ConnectDb() (*gorm.DB, error) {
 				return nil, err
 			}
 			fmt.Println("Enabled uuid-ossp extension successfully")
+			db.AutoMigrate(&models.VASService{})
+			db.AutoMigrate(&models.Admin{})
+			db.AutoMigrate(&models.Customer{})
+			db.AutoMigrate(&models.Organization{})
+			db.AutoMigrate(&models.VASProvider{})
 		} else {
 			return nil, err
 		}
 		return nil, err
 	}
+	
 	fmt.Println("Connected to database successfully")
-	DB = db
 	db.AutoMigrate(&models.VASService{})
 	db.AutoMigrate(&models.Admin{})
 	db.AutoMigrate(&models.Customer{})
 	db.AutoMigrate(&models.Organization{})
 	db.AutoMigrate(&models.VASProvider{})
+	DB = db
 	return db, nil
 }

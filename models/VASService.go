@@ -5,10 +5,10 @@ import (
 )
 
 type VASService struct {
-	ID          uuid.UUID `gorm:"<-:create;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	ID          uuid.UUID `gorm:"<-:create;unique;not null;unique;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	Name        string    `gorm:"<-;not null;type:varchar(255)" json:"name"`
-	Description string    `gorm:"<-" json:"description"`
-	Status      string    `json:"status"`
-	Updated     int64     `gorm:"autoUpdateTime"` // Use unix nano seconds as updating time
-	Created     int64     `gorm:"autoCreateTime"` // Use unix seconds as creating time
+	Description string    `gorm:"<-;not null;type:varchar(255)" json:"description"`
+	Status      string    `gorm:"<-;not null;type:varchar(255);default:Active" json:"status"`
+	Updated     int64     `gorm:"autoUpdateTime" json:"updated"`
+	Created     int64     `gorm:"autoCreateTime" json:"created"`
 }

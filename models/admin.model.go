@@ -1,12 +1,16 @@
 package models
 
+import (
+	"github.com/google/uuid"
+)
+
 type Admin struct {
-	ID       uint   `gorm:"<-:create"` // allow read and create
-	Name     string `gorm:"-:all"`
-	Email    string `gorm:"-:all"`
-	Password string `gorm:"-:all"`
-	Role     string `gorm:"-:all"`
-	Status   string `gorm:"-:all"`
-	Updated   int64 `gorm:"autoUpdateTime"` // Use unix nano seconds as updating time
-	Created   int64 `gorm:"autoCreateTime"`      // Use unix seconds as creating time
+	ID       uuid.UUID `gorm:"<-:create;unique;not null;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	Name     string    `gorm:"<-;not null;type:varchar(255)" json:"name"`
+	Email    string    `gorm:"<-;unique;not null;type:varchar(255)" json:"email"`
+	Password string    `gorm:"<-;not null;type:varchar(255)" json:"password"`
+	Role     string    `gorm:"<-;not null;type:varchar(255);default:Admin" json:"role"`
+	Status   string    `gorm:"<-;not null;type:varchar(255);default:Active" json:"status"`
+	Updated  int64     `gorm:"autoUpdateTime" json:"updated"`
+	Created  int64     `gorm:"autoCreateTime" json:"created"`
 }

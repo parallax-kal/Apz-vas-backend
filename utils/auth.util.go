@@ -3,16 +3,20 @@ package utils
 import (
 	"os"
 	"time"
+
 	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 )
 
 type Claims struct {
-	ID uint `json:"id"`
+	ID uuid.UUID  `json:"id"`
+	Email string `json:"email"`
 	jwt.StandardClaims
 }
 
 type Data struct {
-	ID uint `json:"id"`
+	ID uuid.UUID `json:"id"`
+	Email string `json:"email"`
 }
 
 
@@ -27,9 +31,11 @@ func GenerateToken(data *Data) (string, error) {
 	// Create the JWT claims, which includes the username and expiry time
 	claims := &Claims{
 		ID: data.ID,
+		Email: data.Email,
 		StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
 			ExpiresAt: expirationTime.Unix(),
+			
 		},
 	}
 

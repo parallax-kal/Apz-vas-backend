@@ -1,12 +1,13 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
-	"apz-vas/middlewares"
 	"apz-vas/controllers"
+	// "apz-vas/middlewares"
+	"github.com/gin-gonic/gin"
 )
 
 // initialize organization routes
 func InitializeOrganizationRoutes(router *gin.RouterGroup) {
-	router.POST("/create-organization", middlewares.AdminMiddleware(), controllers.CreateOrganization())
+	router.POST("/signup", controllers.SignupOrganization())
+	router.POST("/login", controllers.LoginOrganization())
 }
