@@ -71,7 +71,9 @@ func SignupOrganization() gin.HandlerFunc {
 		organization.Password = hashedPassword
 
 		// Create the organization
-		if err := configs.DB.Select("Name", "Email", "Password", "Status").Create(&organization).Error; err != nil {
+		tx := configs.DB.Begin()
+		if err := tx.Select("Name", "Email", "Password", "Status").Create(&organization).Error; err != nil {
+			tx.Rollback()
 			c.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
@@ -87,13 +89,14 @@ func SignupOrganization() gin.HandlerFunc {
 		)
 
 		if err != nil {
+			tx.Rollback()
 			c.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
 			return
 		}
-
+		tx.Commit()
 		c.JSON(200, gin.H{
 			"message": "Organization created successfully",
 			"token":   token,
@@ -132,7 +135,6 @@ func LoginOrganization() gin.HandlerFunc {
 			})
 			return
 		}
-
 		// Get the organization from the database
 		var givenPassword = organization.Password
 		if  err := configs.DB.Where("email = ?", organization.Email).First(&organization).Error; err != nil {
