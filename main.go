@@ -19,7 +19,7 @@ func main() {
 	routes.InitializeRoutes(router)
 
 	router.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "Welcome to APZ-VAS API"})
+		c.JSON(200, "Welcome to APZ-VAS API")
 	})
 	router.Run(":5000")
 }
