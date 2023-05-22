@@ -4,9 +4,10 @@ import (
 	"apz-vas/configs"
 	"apz-vas/models"
 	"apz-vas/utils"
-
 	"github.com/gin-gonic/gin"
 )
+
+
 
 func SignupOrganization() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -107,7 +108,7 @@ func LoginOrganization() gin.HandlerFunc {
 		var organization models.Organization
 		if err := c.ShouldBindJSON(&organization); err != nil {
 			c.JSON(400, gin.H{
-				"error":   err.Error(),
+				"error":   "Email or password is incorrect",
 				"success": false,
 			})
 			return
@@ -224,16 +225,36 @@ func CreateOrganization() gin.HandlerFunc {
 func GetOrganizations() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var organizations []models.Organization
-		if err := configs.DB.Find(&organizations).Error; err != nil {
+		// get page, limit query param
+		page, limit := ctx.Query("page"), ctx.Query("limit")
+		if page == "" {
+			ctx.JSON(400, gin.H{
+				"error":   "Page is required",
+				"success": false,
+			})
+			return
+		}
+		if limit == "" {
+			ctx.JSON(400, gin.H{
+				"error":   "Limit is required",
+				"success": false,
+			})
+			return
+		}
+		// get offset
+		offset := utils.GetOffset(page, limit)
+		// get organizations
+		if err := configs.DB.Offset(offset).Limit(utils.ConvertStringToInt(limit)).Find(&organizations).Error; err != nil {
 			ctx.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
+			return
 		}
 		ctx.JSON(200, gin.H{
-			"message": "Organizations fetched successfully",
-			"success": true,
-			"data":    organizations,
+			"message": "Organizations retrieved successfully",
+			"organizations": organizations,
+			"success":       true,
 		})
 	}
 }
