@@ -17,7 +17,7 @@ func CrateAPIKEY() uuid.UUID {
 		// check if the api key exists in the database
 		configs.DB.Where("APIKey = ?", apiKey).First(&organization)
 		// organization ID is a uuid itself
-		if organization.ID == uuid.Nil {
+		if organization.UserId == uuid.Nil {
 			return apiKey
 		}
 
@@ -31,7 +31,7 @@ func CheckApiKey(apikey uuid.UUID) (*models.Organization, error) {
 	// check if the api key exists in the database
 	configs.DB.Where("APIKey = ?", apikey).First(&organization)
 	// organization ID is a uuid itself
-	if organization.ID == uuid.Nil {
+	if organization.UserId == uuid.Nil {
 		return nil, errors.New("API Key is not valid")
 	}
 	return &organization, nil

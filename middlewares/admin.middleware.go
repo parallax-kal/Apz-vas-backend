@@ -22,6 +22,7 @@ func AdminMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		// search only his status
 
 		if admin.Status != "Active" {
 			c.JSON(403, gin.H{

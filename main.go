@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
+	// gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	_, err := configs.ConnectDb()
 	if err != nil {
@@ -27,5 +27,5 @@ func main() {
 		c.JSON(200, "Welcome to APZ VAS")
 	})
 	routes.InitializeRoutes(router)
-	router.Run(":5000")
+	router.Run("127.0.0.1:5000")
 }

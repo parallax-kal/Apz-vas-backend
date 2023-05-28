@@ -9,14 +9,14 @@ import (
 )
 
 type Claims struct {
-	ID    uuid.UUID `json:"id"`
-	// Email string    `json:"email"`
+	ID   uuid.UUID `json:"id"`
+	Role string    `json:"role"`
 	jwt.StandardClaims
 }
 
 type Data struct {
-	ID    uuid.UUID `json:"id"`
-	// Email string    `json:"email"`
+	ID uuid.UUID `json:"id"`
+	Role string    `json:"role"`
 }
 
 // GenerateToken generates a jwt token for the user
@@ -27,8 +27,8 @@ func GenerateToken(data Data) (string, error) {
 
 	// Create the JWT claims, which includes the username and expiry time
 	claims := &Claims{
-		ID:    data.ID,
-		// Email: data.Email,
+		ID: data.ID,
+		Role: data.Role,
 		StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
 			ExpiresAt: expirationTime.Unix(),
@@ -61,5 +61,6 @@ func ExtractDataFromToken(tokenString string) (*Data, error) {
 
 	return &Data{
 		ID: claims.ID,
+		Role: claims.Role,
 	}, nil
 }

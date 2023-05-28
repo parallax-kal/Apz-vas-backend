@@ -26,6 +26,7 @@ func ConnectDb() (*gorm.DB, error) {
 	fmt.Println("Connecting to database...")
 	dsn := "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " dbname=" + DBNAME + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
 	// if error is about database does not exist, create the database
 	if err != nil {
 		if strings.Contains(err.Error(), "database \""+DBNAME+"\" does not exist") {
@@ -56,16 +57,20 @@ func ConnectDb() (*gorm.DB, error) {
 			}
 			fmt.Println("Enabled uuid-ossp extension successfully")
 			db.AutoMigrate(&models.VASService{})
+			db.AutoMigrate(&models.ProviderService{})
+			db.AutoMigrate(&models.SubScribedServices{})
 			db.AutoMigrate(&models.Admin{})
 			db.AutoMigrate(&models.Customer{})
 			db.AutoMigrate(&models.Organization{})
 			db.AutoMigrate(&models.VASProvider{})
+			db.AutoMigrate(&models.CustomerService{})
 		} else {
 			return nil, err
 		}
 		return nil, err
 	}
 	fmt.Println("Connected to database successfully")
+
 	db.AutoMigrate(&models.VASService{})
 	db.AutoMigrate(&models.Admin{})
 	db.AutoMigrate(&models.Customer{})

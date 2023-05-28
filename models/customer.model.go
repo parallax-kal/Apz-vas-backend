@@ -4,18 +4,20 @@ import (
 	"github.com/google/uuid"
 )
 
-type customerService struct {
-	ServiceId  VASService  `gorm:"<-;unique;not null;type:uuid;" json:"service_id"`
+type CustomerService struct {
+	ServiceId  uuid.UUID   `gorm:"<-;not null;type:uuid" json:"service_id"`
+	ProviderId uuid.UUID   `gorm:"<-;not null;type:uuid" json:"provider_id"`
+	Provider   VASProvider `gorm:"foreignkey:ProviderId;references:ID" json:"provider"`
+	Service    VASService  `gorm:"foreignkey:ServiceId;references:ID" json:"service"`
 	Price      float64     `gorm:"<-;not null;type:float;" json:"price"`
-	ProviderId VASProvider `gorm:"<-;unique;not null;type:uuid;" json:"provider_id"`
 }
 
 type Customer struct {
-	ID           uuid.UUID         `gorm:"<-:create;unique;not null;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	Name         string            `gorm:"<-;not null;type:varchar(255)" json:"name"`
-	Services     []customerService `gorm:"<-;not null;foreignkey:ServiceId,ProviderId;references:ID,ID" json:"services"`
-	Organization Organization      `gorm:"<-;not null;type:uuid;foreignkey:OrganizationId;references:ID" json:"organization"`
-	Status       string            `gorm:"<-;not null;type:varchar(255);default:Active" json:"status"`
-	UpdatedAt    int64             `gorm:"autoUpdateTime" json:"updated_at"`
-	CreatedAt    int64             `gorm:"autoCreateTime" json:"created_at"`
+	ID             uuid.UUID `gorm:"<-:create;unique;not null;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	Name           string    `gorm:"<-;not null;type:varchar(255)" json:"name"`
+	OrganizationId uuid.UUID `gorm:"<-;type:uuid" json:"organization_id"`
+	Organization   User      `gorm:"<-;type:uuid;foreignkey:OrganizationId;references:ID" json:"organization"`
+	Status         string    `gorm:"<-;not null;type:varchar(255);default:Active" json:"status"`
+	UpdatedAt      int64     `gorm:"autoUpdateTime" json:"updated_at"`
+	CreatedAt      int64     `gorm:"autoCreateTime" json:"created_at"`
 }
