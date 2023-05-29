@@ -18,7 +18,7 @@ func SignupOrganization() gin.HandlerFunc {
 			})
 			return
 		}
-		_, err := CreateUser(organization, false)
+		user, err := CreateUser(organization, false)
 		if err != nil {
 			c.JSON(400, gin.H{
 				"error":   err.Error(),
@@ -28,8 +28,8 @@ func SignupOrganization() gin.HandlerFunc {
 		}
 
 		token, err := utils.GenerateToken(utils.UserData{
-			ID:   organization.ID,
-			Role: organization.Role,
+			ID:   user.ID,
+			Role: user.Role,
 		})
 		if err != nil {
 			c.JSON(400, gin.H{
