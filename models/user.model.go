@@ -9,7 +9,7 @@ type User struct {
 	Name      string    `gorm:"<-;not null;type:varchar(255)" json:"name"`
 	Email     string    `gorm:"<-;unique;not null;type:varchar(255)" json:"email"`
 	Password  string    `gorm:"<-;not null;type:varchar(255)" json:"password"`
-	APIKey 	  string    `gorm:"<-:create;type:uuid;default:uuid_generate_v4()" json:"api_key"`
+	APIKey    uuid.UUID `gorm:"<-:create;type:uuid;default:uuid_generate_v4()" json:"api_key"`
 	Role      string    `gorm:"<-;not null;type:varchar(255);default:Organization" json:"role"`
 	Status    string    `gorm:"<-;not null;type:varchar(255);default:Active" json:"status"`
 	UpdatedAt int64     `gorm:"autoUpdateTime" json:"updated_at"`

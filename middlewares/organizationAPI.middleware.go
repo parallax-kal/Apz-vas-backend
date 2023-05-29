@@ -7,7 +7,7 @@ import (
 
 func OrganizationAPIMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		apikey := ctx.Request.Header.Get("x-api-key")
+		apikey := ctx.Request.Header.Get("apz-vas-api-key")
 		if apikey == "" {
 			ctx.JSON(401, gin.H{
 				"error":   "Api Key missing",

@@ -10,12 +10,12 @@ import (
 func main() {
 	// gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	
+
 	_, err := configs.ConnectDb()
 	if err != nil {
 		panic(err)
 	}
-	
+
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"PUT", "PATCH", "POST", "GET", "DELETE"},
@@ -24,10 +24,21 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	// check not found routes
+	router.NoRoute(func(c *gin.Context) {
+		c.JSON(404, gin.H{
+			"error":   "Route Not found",
+			"success": false,
+		})
+	})
+
 	router.GET("/", func(c *gin.Context) {
 		c.String(200, "Welcome to APZ VAS")
 	})
 
 	routes.InitializeRoutes(router)
-	router.Run("127.0.0.1:5000")
+
+	router.SetTrustedProxies(nil)
+
+	router.Run(":5000")
 }

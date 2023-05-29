@@ -14,20 +14,20 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-type Data struct {
-	ID uuid.UUID `json:"id"`
+type UserData struct {
+	ID   uuid.UUID `json:"id"`
 	Role string    `json:"role"`
 }
 
 // GenerateToken generates a jwt token for the user
-func GenerateToken(data Data) (string, error) {
+func GenerateToken(data UserData) (string, error) {
 	// Declare the expiration time of the token
 	// Here, we have kept it as 5 minutes
 	expirationTime := time.Now().Add(5 * time.Minute)
 
 	// Create the JWT claims, which includes the username and expiry time
 	claims := &Claims{
-		ID: data.ID,
+		ID:   data.ID,
 		Role: data.Role,
 		StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
@@ -47,7 +47,7 @@ func GenerateToken(data Data) (string, error) {
 	return tokenString, nil
 }
 
-func ExtractDataFromToken(tokenString string) (*Data, error) {
+func ExtractDataFromToken(tokenString string) (*UserData, error) {
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
@@ -59,8 +59,8 @@ func ExtractDataFromToken(tokenString string) (*Data, error) {
 		return nil, err
 	}
 
-	return &Data{
-		ID: claims.ID,
+	return &UserData{
+		ID:   claims.ID,
 		Role: claims.Role,
 	}, nil
 }

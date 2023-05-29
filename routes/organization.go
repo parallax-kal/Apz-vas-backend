@@ -8,12 +8,17 @@ import (
 
 // initialize organization routes
 func InitializeOrganizationRoutes(router *gin.RouterGroup) {
-	router.POST("/signup", controllers.SignupOrganization())
-	router.POST("/login", controllers.LoginOrganization())
 	router.POST("/create-organization",
 		middlewares.AuthMiddleware(),
-		middlewares.AdminMiddleware(),
 		controllers.CreateOrganization(),
+	)
+	router.DELETE("/delete-organization",
+		middlewares.AdminMiddleware(),
+		controllers.DeleteOrganization(),
+	)
+	router.PUT("/update-organization",
+		middlewares.AdminMiddleware(),
+		controllers.UpdateOrganization(),
 	)
 	router.GET("/get-organizations",
 		middlewares.AuthMiddleware(),
@@ -28,10 +33,5 @@ func InitializeOrganizationRoutes(router *gin.RouterGroup) {
 		middlewares.AuthMiddleware(),
 		middlewares.OrganizationMiddleware(),
 		controllers.SubScribeService(),
-	)
-	router.PUT("/account-settings",
-		middlewares.AuthMiddleware(),
-		middlewares.OrganizationMiddleware(),
-		controllers.AdminAccountSettings(),
 	)
 }

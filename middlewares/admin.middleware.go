@@ -1,9 +1,7 @@
 package middlewares
 
 import (
-	"apz-vas/configs"
 	"apz-vas/models"
-	"apz-vas/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,30 +9,16 @@ import (
 func AdminMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		data := c.MustGet("data").(utils.Data)
-		var admin models.Admin
-		// search by ID
-		if err := configs.DB.Where("ID = ?", data.ID).First(&admin).Error; err != nil {
-			c.JSON(403, gin.H{
-				"error":   "Unkown Admin",
+		user := c.MustGet("user_data").(models.User)
+
+		// check if user's role is not admin or superadmin
+		if user.Role != "Admin" && user.Role != "SuperAdmin" {
+			c.JSON(401, gin.H{
+				"error":   "Unauthorized",
 				"success": false,
 			})
 			c.Abort()
-			return
 		}
-		// search only his status
-
-		if admin.Status != "Active" {
-			c.JSON(403, gin.H{
-				"error":   "Inactive Admin",
-				"success": false,
-			})
-			c.Abort()
-			return
-		}
-
-		c.Set("admin", admin)
-
 		c.Next()
 	}
 }

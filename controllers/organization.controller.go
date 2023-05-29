@@ -8,33 +8,35 @@ import (
 	"github.com/google/uuid"
 )
 
+func UpdateOrganization() gin.HandlerFunc {
+	return func(c*gin.Context) {
+
+	}
+}
+
+func DeleteOrganization() gin.HandlerFunc {
+	return func(c*gin.Context) {}
+}
+
 func CreateOrganization() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var user models.User
-		if err := ctx.ShouldBindJSON(&user); err != nil {
+		var organization models.User
+		if err := ctx.ShouldBindJSON(&organization); err != nil {
 			ctx.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
 			return
 		}
-		user.Role = "Organization"
-		newUser, err := CreateUser(user)
+		_, err := CreateUser(organization, false)
 		if err != nil {
 			ctx.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
 		}
-		var organization models.User
-		if err := configs.DB.Create(&organization).Error; err != nil {
-			ctx.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
-
+		
+		
 		ctx.JSON(200, gin.H{
 			"message": "Organization created successfully",
 			"success": true,
@@ -122,7 +124,7 @@ func GetOrganizationSubScribedServices() gin.HandlerFunc {
 
 func SubScribeService() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		organization := ctx.MustGet("organization").(models.Organization)
+		organization := ctx.MustGet("organization").(models.User)
 		var subScribedService models.SubScribedServices
 		if err := ctx.ShouldBindJSON(&subScribedService); err != nil {
 			ctx.JSON(400, gin.H{
@@ -141,15 +143,9 @@ func SubScribeService() gin.HandlerFunc {
 			return
 		}
 
-		if subScribedService.OrganizationId == uuid.Nil {
-			ctx.JSON(400, gin.H{
-				"error":   "OrganizationId is required",
-				"success": false,
-			})
-			return
-		}
+	
 		// put organizationId in subScribedService
-		subScribedService.OrganizationId = organization.ID
+		subScribedService.APIKey = organization.ID
 		if err := configs.DB.Create(&subScribedService).Error; err != nil {
 			ctx.JSON(400, gin.H{
 				"error":   "SubScribed Service already exists",
@@ -163,69 +159,4 @@ func SubScribeService() gin.HandlerFunc {
 		})
 	}
 
-}
-
-func OrganizationAccountSettings() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		type OrganizationUpdate struct {
-			models.Organization
-			changedPassword bool
-			Password        string
-			NewPassword     string
-		}
-
-		var organization OrganizationUpdate
-		if err := c.ShouldBindJSON(&organization); err != nil {
-			c.JSON(400, gin.H{
-				"error":   "Email or password is incorrect",
-				"success": false,
-			})
-			return
-		}
-
-		// VALIDATE EMAIL
-		emailError := utils.ValidateEmail(organization.Email)
-		if emailError != nil {
-			c.JSON(400, gin.H{
-				"success": false,
-				"error":   "Invalid Email address",
-			})
-		}
-		// VALIDATE PASSWORD
-		passwordError := utils.ValidatePassword(organization.Password)
-		if passwordError != nil {
-			c.JSON(400, gin.H{
-				"error":   passwordError.Error(),
-				"success": false,
-			})
-			return
-		}
-		var newOrganization models.Organization
-		if organization.changedPassword {
-			newOrganization = models.Organization{
-				Name:     organization.Name,
-				Email:    organization.Email,
-				Password: organization.Password,
-			}
-		} else {
-			// delete NewPassword
-			newOrganization = models.Organization{
-				Name:  organization.Name,
-				Email: organization.Email,
-			}
-		}
-		if err := configs.DB.Model(&newOrganization).Updates(newOrganization).Error; err != nil {
-			c.JSON(400, gin.H{
-				"success": false,
-				"error":   err.Error(),
-			})
-			return
-		}
-
-		c.JSON(200, gin.H{
-			"message": "Organization updated successfully",
-			"success": true,
-		})
-
-	}
 }

@@ -13,11 +13,11 @@ type CustomerService struct {
 }
 
 type Customer struct {
-	ID             uuid.UUID `gorm:"<-:create;unique;not null;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	Name           string    `gorm:"<-;not null;type:varchar(255)" json:"name"`
-	OrganizationId uuid.UUID `gorm:"<-;type:uuid" json:"organization_id"`
-	Organization   User      `gorm:"<-;type:uuid;foreignkey:OrganizationId;references:ID" json:"organization"`
-	Status         string    `gorm:"<-;not null;type:varchar(255);default:Active" json:"status"`
-	UpdatedAt      int64     `gorm:"autoUpdateTime" json:"updated_at"`
-	CreatedAt      int64     `gorm:"autoCreateTime" json:"created_at"`
+	ID           uuid.UUID `gorm:"<-:create;unique;not null;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	Name         string    `gorm:"<-;not null;type:varchar(255)" json:"name"`
+	APIKey       uuid.UUID `gorm:"<-;not null;type:uuid" json:"api_key"`
+	Organization User      `gorm:"<-;type:uuid;foreignkey:OrganizationId;references:ID" json:"organization"`
+	Status       string    `gorm:"<-;not null;type:varchar(255);default:Active" json:"status"`
+	UpdatedAt    int64     `gorm:"autoUpdateTime" json:"updated_at"`
+	CreatedAt    int64     `gorm:"autoCreateTime" json:"created_at"`
 }

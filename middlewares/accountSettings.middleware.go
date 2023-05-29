@@ -1,65 +1,78 @@
 package middlewares
 
 import (
+	"apz-vas/configs"
 	"apz-vas/models"
 	"apz-vas/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
 type Password struct {
-	Password string `json:"password"`
+	OldPassword string `json:"password"`
 }
 
-func AdminAccountSettingsMiddleware() gin.HandlerFunc {
+
+func AccountSettingsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
-		admin := c.MustGet("admin").(models.Admin)
-		// get passwordBody from body
+		// var user models.User
 		var passwordBody Password
-
 		if err := c.ShouldBindJSON(&passwordBody); err != nil {
 			c.JSON(400, gin.H{
-				"error":   "Password is required",
+				"error":   err.Error(),
 				"success": false,
 			})
 			c.Abort()
 			return
 		}
-		err := utils.ComparePassword(passwordBody.Password, admin.Password)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   "Incorrect Password",
+		tokenString := c.Request.Header.Get("Authorization")
+		if tokenString == "" {
+			c.JSON(401, gin.H{
+				"error":   "Token is missing",
 				"success": false,
 			})
 			c.Abort()
 			return
 		}
-		c.Next()
-	}
-}
+		userData, error := utils.ExtractDataFromToken(tokenString)
+		if error != nil {
+			c.JSON(401, gin.H{
+				"error":   error.Error(),
+				"success": false,
+			})
+			c.Abort()
+			return
+		}
+		var user models.User		
+		
+		if err := configs.DB.Where("ID = ?", userData.ID).First(&user).Error; err != nil {
+			c.JSON(401, gin.H{
+				"error":   "User not found",
+				"success": false,
+			})
+			c.Abort()
+			return
+		}
 
-func OrganizationAccountSettingsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		organization := c.MustGet("organization").(models.Organization)
-		var passwordBody Password
+		if user.Status != "Active" {
+			c.JSON(401, gin.H{
+				"error":   "User is inactive",
+				"success": false,
+			})
+			c.Abort()
+			return
+		}
 
-		if err := c.ShouldBindJSON(&passwordBody); err != nil {
-			c.JSON(400, gin.H{
-				"error":   "Password is required",
+		if err := utils.ComparePassword(passwordBody.OldPassword, user.Password); err != nil {
+			c.JSON(401, gin.H{
+				"error":   "Password is incorrect",
 				"success": false,
 			})
 			c.Abort()
 			return
 		}
-		err := utils.ComparePassword(passwordBody.Password, organization.Password)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   "Incorrect Password",
-				"success": false,
-			})
-			c.Abort()
-			return
-		}
+		c.Set("user_data", user)
 		c.Next()
+
 	}
 }

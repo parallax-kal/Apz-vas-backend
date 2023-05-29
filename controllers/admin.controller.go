@@ -1,40 +1,35 @@
 package controllers
 
 import (
-	"apz-vas/configs"
 	"apz-vas/models"
 	"apz-vas/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
-
 func SignupAdmin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-			var user models.User
-			if err := ctx.ShouldBindJSON(&user); err != nil {
-				ctx.JSON(400, gin.H{
-					"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
-		user.Role = "Admin"
-		newUser, err := CreateUser(user)
-		var admin models.Admin
-		admin.UserId = newUser.ID
-		// tx := configs.DB.Begin()
-		if err :=  configs.DB.Create(&admin).Error; err != nil {
-			// tx.Rollback()
+		var user models.User
+		if err := ctx.ShouldBindJSON(&user); err != nil {
 			ctx.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
 			return
 		}
-		// tx.Commit()
+		admin, err := CreateUser(user, false)
+		if err != nil {
+			ctx.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
 		token, err := utils.GenerateToken(
-			utils.Data{
-				ID: newUser.ID,
+			utils.UserData{
+				ID:   admin.ID,
+				Role: admin.Role,
 			},
 		)
 		if err != nil {
@@ -53,3 +48,20 @@ func SignupAdmin() gin.HandlerFunc {
 	}
 }
 
+func GetAdmins() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+	}
+}
+
+func UpdateAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {}
+}
+
+func DeleteAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {}
+}
+
+func CreateAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {}
+}

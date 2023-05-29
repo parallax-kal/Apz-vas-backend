@@ -7,31 +7,15 @@ import (
 	"github.com/google/uuid"
 )
 
-func CrateAPIKEY() uuid.UUID {
-	// loop until we get a unique api key in organization model
-	for {
-		apiKey := uuid.New()
-		// check if the api key exists in the database
-		var organization models.Organization
-		organization.APIKey = apiKey
-		// check if the api key exists in the database
-		configs.DB.Where("APIKey = ?", apiKey).First(&organization)
-		// organization ID is a uuid itself
-		if organization.UserId == uuid.Nil {
-			return apiKey
-		}
 
-	}
 
-}
-
-func CheckApiKey(apikey uuid.UUID) (*models.Organization, error) {
-	var organization models.Organization
+func CheckApiKey(apikey uuid.UUID) (*models.User, error) {
+	var organization models.User
 	organization.APIKey = apikey
 	// check if the api key exists in the database
 	configs.DB.Where("APIKey = ?", apikey).First(&organization)
-	// organization ID is a uuid itself
-	if organization.UserId == uuid.Nil {
+
+	if organization.ID == uuid.Nil {
 		return nil, errors.New("API Key is not valid")
 	}
 	return &organization, nil

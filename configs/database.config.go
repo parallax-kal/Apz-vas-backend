@@ -42,6 +42,7 @@ func ConnectDb() (*gorm.DB, error) {
 				return nil, err
 			}
 			fmt.Println("Database created successfully")
+			fmt.Println("Connecting to database...")
 			// Connect to database
 			dsn = "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " dbname=" + DBNAME + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
 			db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -56,26 +57,26 @@ func ConnectDb() (*gorm.DB, error) {
 				return nil, err
 			}
 			fmt.Println("Enabled uuid-ossp extension successfully")
-			db.AutoMigrate(&models.VASService{})
-			db.AutoMigrate(&models.ProviderService{})
-			db.AutoMigrate(&models.SubScribedServices{})
-			db.AutoMigrate(&models.Admin{})
-			db.AutoMigrate(&models.Customer{})
-			db.AutoMigrate(&models.Organization{})
-			db.AutoMigrate(&models.VASProvider{})
-			db.AutoMigrate(&models.CustomerService{})
+			migrate(db)
+			DB = db
+			return db, nil
 		} else {
 			return nil, err
 		}
-		return nil, err
 	}
 	fmt.Println("Connected to database successfully")
-
-	db.AutoMigrate(&models.VASService{})
-	db.AutoMigrate(&models.Admin{})
-	db.AutoMigrate(&models.Customer{})
-	db.AutoMigrate(&models.Organization{})
-	db.AutoMigrate(&models.VASProvider{})
+	migrate(db)
 	DB = db
 	return db, nil
+}
+
+func migrate(db *gorm.DB) {
+	db.AutoMigrate(&models.VASService{})
+	db.AutoMigrate(&models.ProviderService{})
+	db.AutoMigrate(&models.SubScribedServices{})
+	db.AutoMigrate(&models.Customer{})
+	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&models.VASProvider{})
+	db.AutoMigrate(&models.CustomerService{})
+
 }
