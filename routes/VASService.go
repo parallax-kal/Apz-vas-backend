@@ -12,8 +12,15 @@ func InitializeVASServiceRoutes(router *gin.RouterGroup) {
 		middlewares.AdminMiddleware(),
 		controllers.CreateVasService(),
 	)
-	// router.GET("/get-vas-services", controllers.GetVASServices())
-	// router.GET("/get-vas-service/:id", controllers.GetVASService())
-	// router.PUT("/update-vas-service/:id", controllers.UpdateVASService())
-	// router.DELETE("/delete-vas-service/:id", controllers.DeleteVASService())
+	router.GET("/get-vas-services", controllers.GetVASServices())
+	router.PUT("/update-vas-service",
+		middlewares.AuthMiddleware(),
+		middlewares.AdminMiddleware(),
+		controllers.UpdateVasService(),
+	)
+	router.DELETE("/delete-vas-service",
+		middlewares.AuthMiddleware(),
+		middlewares.AdminMiddleware(),
+		controllers.DeleteVasService(),
+	)
 }

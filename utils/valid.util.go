@@ -21,9 +21,9 @@ func ValidatePassword(password string) error {
 	if len(password) < 8 {
 		return errors.New("Password must be at least 8 characters")
 	}
-	if !checkPassword(password) {
-		return errors.New("Password must contain at least 1 uppercase, 1 lowercase, 1 digit and 1 special character")
-	}
+	// if !checkPassword(password) {
+	// 	return errors.New("Password must contain at least 1 uppercase, 1 lowercase, 1 digit and 1 special character")
+	// }
 	return nil
 }
 
