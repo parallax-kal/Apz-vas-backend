@@ -1,4 +1,4 @@
-package controllers
+	package controllers
 
 import (
 	"apz-vas/configs"

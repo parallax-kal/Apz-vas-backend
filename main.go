@@ -8,13 +8,14 @@ import (
 )
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
+	// gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+	
 	_, err := configs.ConnectDb()
 	if err != nil {
 		panic(err)
 	}
-
+	
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"PUT", "PATCH", "POST", "GET", "DELETE"},
@@ -24,8 +25,9 @@ func main() {
 	}))
 
 	router.GET("/", func(c *gin.Context) {
-		c.JSON(200, "Welcome to APZ VAS")
+		c.String(200, "Welcome to APZ VAS")
 	})
+
 	routes.InitializeRoutes(router)
 	router.Run(":5000")
 }
