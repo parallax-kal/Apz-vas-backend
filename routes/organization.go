@@ -12,6 +12,7 @@ func InitializeOrganizationRoutes(router *gin.RouterGroup) {
 		middlewares.AuthMiddleware(),
 		controllers.CreateOrganization(),
 	)
+	router.POST("/signup", controllers.SignupOrganization())
 	router.DELETE("/delete-organization",
 		middlewares.AdminMiddleware(),
 		controllers.DeleteOrganization(),

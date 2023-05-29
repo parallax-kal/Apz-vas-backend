@@ -12,4 +12,12 @@ func InitializeUserRouters(router *gin.RouterGroup) {
 		middlewares.AccountSettingsMiddleware(),
 		controllers.AccountSettings(),
 	)
+	router.GET("/get-users",
+		middlewares.SuperAdminMiddleware(),
+		controllers.GetUsers(),
+	)
+	router.GET("/me",
+		middlewares.AuthMiddleware(),
+		controllers.GetUser(),
+	)
 }

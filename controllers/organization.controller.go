@@ -8,14 +8,53 @@ import (
 	"github.com/google/uuid"
 )
 
+func SignupOrganization() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var organization models.User
+		if err := c.ShouldBindJSON(&organization); err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+		_, err := CreateUser(organization, false)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		token, err := utils.GenerateToken(utils.UserData{
+			ID:   organization.ID,
+			Role: organization.Role,
+		})
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"message": "Organization created successfully",
+			"success": true,
+			"token":   token,
+		})
+	}
+}
+
 func UpdateOrganization() gin.HandlerFunc {
-	return func(c*gin.Context) {
+	return func(c *gin.Context) {
 
 	}
 }
 
 func DeleteOrganization() gin.HandlerFunc {
-	return func(c*gin.Context) {}
+	return func(c *gin.Context) {}
 }
 
 func CreateOrganization() gin.HandlerFunc {
@@ -34,9 +73,9 @@ func CreateOrganization() gin.HandlerFunc {
 				"error":   err.Error(),
 				"success": false,
 			})
+			return
 		}
-		
-		
+
 		ctx.JSON(200, gin.H{
 			"message": "Organization created successfully",
 			"success": true,
@@ -143,7 +182,6 @@ func SubScribeService() gin.HandlerFunc {
 			return
 		}
 
-	
 		// put organizationId in subScribedService
 		subScribedService.APIKey = organization.ID
 		if err := configs.DB.Create(&subScribedService).Error; err != nil {

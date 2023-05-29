@@ -9,6 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func GetUser() gin.HandlerFunc {
+	return func(c*gin.Context) {
+		user := c.MustGet("user_data").(models.User)
+		c.JSON(200, gin.H{
+			"success": true,
+			"user": user,
+		})
+	}
+}
+
 func LoginUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user models.User
@@ -117,14 +127,14 @@ func CreateUser(user models.User, admin bool) (*models.User, error) {
 	if admin == false {
 		// user model has a default api key generation allow it now
 		if err := configs.DB.Create(&user).Error; err != nil {
-			return nil, err
+			return nil, errors.New("Email already exists")
 		}
 
 	} else {
 		user.Role = "Admin"
 		// check if the user is an admin
 		if err := configs.DB.Select("name", "email", "password", "role").Create(&user).Error; err != nil {
-			return nil, err
+			return nil, errors.New("Email already exists")
 		}
 	}
 

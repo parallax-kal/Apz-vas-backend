@@ -2,7 +2,6 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-
 )
 
 // initialize all routes
@@ -11,7 +10,7 @@ func InitializeRoutes(router *gin.Engine) {
 	adminRoutes := router.Group("/admin")
 	vasProviderRoutes := router.Group("/vas-provider")
 	vasServiceRoutes := router.Group("/vas-service")
-	userRoutes := router.Group("/user")
+	userRoutes := router.Group("/users")
 	{
 		InitializeAdminRoutes(adminRoutes)
 		InitializeOrganizationRoutes(organizationRoutes)
