@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"errors"
 	"os"
 	"strings"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 )
@@ -47,10 +49,10 @@ func ExtractDataFromToken(tokenString string) (*UserData, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.New("Invalid token")
 	}
 	if !token.Valid {
-		return nil, err
+		return nil, errors.New("Invalid token")
 	}
 
 	return &UserData{

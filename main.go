@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
+	// gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
 	_, err := configs.ConnectDb()
@@ -38,7 +38,7 @@ func main() {
 
 	routes.InitializeRoutes(router)
 
-	router.SetTrustedProxies(nil)
+	// router.SetTrustedProxies(nil)
 
 	router.Run(":5000")
 }
