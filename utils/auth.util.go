@@ -2,11 +2,11 @@ package utils
 
 import (
 	"errors"
-	"os"
-	"strings"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
+	"os"
+	"strings"
+	"time"
 )
 
 type Claims struct {
@@ -23,9 +23,15 @@ type UserData struct {
 // GenerateToken generates a jwt token for the user
 func GenerateToken(data UserData) (string, error) {
 
+	// expires in 7 days
+	expriresAt := time.Now().Add(time.Hour * 24 * 7).Unix()
+
 	claims := &Claims{
 		ID:   data.ID,
 		Role: data.Role,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expriresAt,
+		},
 	}
 
 	// Declare the token with the algorithm used for signing, and the claims

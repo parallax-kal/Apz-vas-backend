@@ -9,7 +9,7 @@ import (
 )
 
 type ReturnedUser struct {
-	// Name 
+	// Name
 }
 
 func AuthMiddleware() gin.HandlerFunc {
@@ -34,7 +34,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 		var user models.User
 
-		if err := configs.DB.Where("ID = ?", userData.ID).First(&user).Error; err != nil {
+		if err := configs.DB.Select("status, role, name, id, api_key", "email").Where("id = ?", userData.ID).First(&user).Error; err != nil {
 			c.JSON(401, gin.H{
 				"error":   "User not found",
 				"success": false,
@@ -42,6 +42,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
 		if user.Status != "Active" {
 			c.JSON(401, gin.H{
 				"error":   "User is inactive",
@@ -50,7 +51,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
+		user.Status = ""
 		c.Set("user_data", user)
 		c.Next()
 	}

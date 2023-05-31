@@ -71,7 +71,9 @@ func ConnectDb() (*gorm.DB, error) {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(&models.VASService{})
+	db.AutoMigrate(&models.VASService{
+		
+	})
 	db.AutoMigrate(&models.ProviderService{})
 	db.AutoMigrate(&models.SubScribedServices{})
 	db.AutoMigrate(&models.Customer{})

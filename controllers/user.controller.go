@@ -5,16 +5,26 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"errors"
-
 	"github.com/gin-gonic/gin"
 )
 
 func GetUser() gin.HandlerFunc {
-	return func(c*gin.Context) {
+	return func(c *gin.Context) {
 		user := c.MustGet("user_data").(models.User)
+
+		userMap := utils.StructToMap(user)
+		delete(userMap, "password")
+		delete(userMap, "updated_at")
+		delete(userMap, "created_at")
+		delete(userMap, "status")
+		delete(userMap, "id")
+
+		if user.Role == "Admin" {
+			delete(userMap, "api_key")
+		}
 		c.JSON(200, gin.H{
 			"success": true,
-			"user": user,
+			"user":    userMap,
 		})
 	}
 }
@@ -98,6 +108,11 @@ func CreateUser(user models.User, admin bool) (*models.User, error) {
 	if len(user.Name) < 3 {
 		return nil, errors.New("Name must be at least 3 characters")
 	}
+
+	if len(user.Name) > 15 {
+		return nil, errors.New("Name must be at most 15 characters")
+	}
+
 	// VALIDATE EMAIL
 	emailError := utils.ValidateEmail(user.Email)
 	if emailError != nil {
