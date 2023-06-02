@@ -108,8 +108,8 @@ func ValidateUser(user models.User) (*models.User, error) {
 		return nil, errors.New("Name must be at least 3 characters")
 	}
 
-	if len(user.Name) > 15 {
-		return nil, errors.New("Name must be at most 15 characters")
+	if len(user.Name) > 25 {
+		return nil, errors.New("Name must be at most 25 characters")
 	}
 
 	// VALIDATE EMAIL
@@ -138,19 +138,13 @@ func ValidateUser(user models.User) (*models.User, error) {
 
 func CreateUser(user models.User, admin bool) (*models.User, error) {
 
-	// if err := configs.DB.Create(&user).Error; err != nil {
-	// 	return nil, err
-	// }
-	// check if he is an admin or not and give him an api key if he is not admin
 	if admin == false {
-		// user model has a default api key generation allow it now
 		if err := configs.DB.Create(&user).Error; err != nil {
 			return nil, err
 		}
 
 	} else {
 		user.Role = "Admin"
-		// check if the user is an admin
 		if err := configs.DB.Select("name", "email", "password", "role").Create(&user).Error; err != nil {
 			return nil, err
 		}
@@ -190,6 +184,15 @@ func AccountSettings() gin.HandlerFunc {
 			})
 			return
 		}
+
+		if len(user.Name) > 25 {
+			c.JSON(400, gin.H{
+				"error":   "Name must be at most 25 characters",
+				"success": false,
+			})
+			return
+		}
+
 		emailError := utils.ValidateEmail(user.Email)
 		if emailError != nil {
 			c.JSON(400, gin.H{

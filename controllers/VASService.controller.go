@@ -112,7 +112,7 @@ func GetVASServices() gin.HandlerFunc {
 			return
 		}
 
-		if err := configs.DB.Select("id, name, description, status").Offset(offset).Limit(limitInt).Find(&vasServices).Error; err != nil {
+		if err := configs.DB.Select("id, name, description, rebate, status").Offset(offset).Limit(limitInt).Find(&vasServices).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,

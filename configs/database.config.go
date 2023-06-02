@@ -13,6 +13,49 @@ import (
 // ConnectDb connects to the database
 var DB *gorm.DB
 
+var Services = []models.VASService{
+	{
+		Name:        "Mobile Airtime",
+		Description: "This service allows you to buy mobile airtime",
+		Rebate:      10,
+	},
+	{
+		Name:        "Mobile Data",
+		Description: "This service allows you to buy mobile data bundles",
+		Rebate:      15,
+	},
+	{
+		Name:        "Electricity",
+		Description: "This service allows you to pay for your electricity bills",
+		Rebate:      20,
+	},
+	{
+		Name:        "Local Bus Ticket",
+		Description: "This service allows you to buy local bus tickets",
+		Rebate:      14,
+	},
+	{
+		Name:        "National Bus Ticket",
+		Description: "This service allows you to buy national bus tickets",
+		Rebate:      17,
+	},
+}
+
+var Providers = []models.VASProvider{
+	{
+		Name:        "Blue Label",
+		Description: "JSE-listed company that sells innovative technology for mobile commerce to emerging markets in South Africa and abroad. ",
+	},
+	{
+		Name:        "Electrum",
+		Description: "A scalable Platform designed for high-volume, low-value Payments and Value-added Services transactions",
+	},
+	{
+		Name:        "Flix Switch",
+		Description: "The Flix Switch is the on-line server that controls and co-ordinates transactions between retail devices and third parties.",
+	},
+}
+
 func ConnectDb() (*gorm.DB, error) {
 	err := godotenv.Load()
 	if err != nil {
@@ -71,15 +114,18 @@ func ConnectDb() (*gorm.DB, error) {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(&models.VASService{})
-	db.AutoMigrate(&models.Electricity{})
-	db.AutoMigrate(&models.MobileData{})
-	db.AutoMigrate(&models.MobileAirtime{})
-	db.AutoMigrate(&models.LocalBusTicket{})
-	db.AutoMigrate(&models.NationalBusTicket{})
-	db.AutoMigrate(&models.ProviderService{})
-	db.AutoMigrate(&models.SubScribedServices{})
-	db.AutoMigrate(&models.User{})
-	db.AutoMigrate(&models.Customer{})
-	db.AutoMigrate(&models.VASProvider{})
+	db.AutoMigrate(
+		&models.VASService{},
+		&models.Electricity{},
+		&models.MobileData{},
+		&models.MobileAirtime{},
+		&models.LocalBusTicket{},
+		&models.NationalBusTicket{},
+		&models.ProviderService{},
+		&models.SubScribedServices{},
+		&models.User{},
+		&models.Customer{},
+		&models.VASProvider{},
+	)
+
 }

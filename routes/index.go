@@ -6,8 +6,8 @@ import (
 
 // initialize all routes
 func InitializeRoutes(router *gin.Engine) {
-	organizationRoutes := router.Group("/organization")
-	adminRoutes := router.Group("/admin")
+	organizationRoutes := router.Group("/organizations")
+	adminRoutes := router.Group("/admins")
 	vasProviderRoutes := router.Group("/vas-providers")
 	vasServiceRoutes := router.Group("/vas-services")
 	userRoutes := router.Group("/users")

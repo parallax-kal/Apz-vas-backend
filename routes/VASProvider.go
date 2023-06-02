@@ -8,6 +8,7 @@ import (
 )
 
 func InitializeVASProviderRoutes(router *gin.RouterGroup) {
+	
 	router.POST("/create-vas-provider",
 		middlewares.AuthMiddleware(),
 		middlewares.AdminMiddleware(),
@@ -19,7 +20,7 @@ func InitializeVASProviderRoutes(router *gin.RouterGroup) {
 		controllers.GetVasProviders(),
 	)
 	
-	router.GET("/get-vas-provider-service",
+	router.GET("/get-vas-provider-services",
 		middlewares.AuthMiddleware(),
 		middlewares.AdminMiddleware(),
 		controllers.GetProviderServices(),
