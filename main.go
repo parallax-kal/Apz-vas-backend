@@ -3,6 +3,7 @@ package main
 import (
 	"apz-vas/configs"
 	"apz-vas/routes"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -19,7 +20,7 @@ func main() {
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"PUT", "PATCH", "POST", "GET", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "x-api-key"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "apz-vas-api-key"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))

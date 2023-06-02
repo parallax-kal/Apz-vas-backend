@@ -26,7 +26,8 @@ func OrganizationAPIMiddleware() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		ctx.Set("organization", organization)
+		print(organization)
+		ctx.Set("user_data", organization)
 		ctx.Next()
 
 	}

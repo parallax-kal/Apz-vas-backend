@@ -2,12 +2,15 @@ package middlewares
 
 import (
 	"apz-vas/models"
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
 func OrganizationMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		organization := c.MustGet("user_data").(models.User)
+		fmt.Print(organization)
 		if organization.Role != "Organization" {
 			c.JSON(401, gin.H{
 				"error":   "Unauthorized",

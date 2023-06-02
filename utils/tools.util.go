@@ -13,8 +13,8 @@ func ConvertStringToInt(value string) int {
 func ConvertIntToString(value int) string {
 	return strconv.Itoa(value)
 }
-func GetOffset(page, limit string) int {
-	return (ConvertStringToInt(page) - 1) * ConvertStringToInt(limit)
+func GetOffset(page int, limit int) int {
+	return (page - 1) * limit
 }
 
 func StructToMap(obj interface{}) map[string]interface{} {

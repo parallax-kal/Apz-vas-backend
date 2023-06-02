@@ -11,11 +11,13 @@ func InitializeRoutes(router *gin.Engine) {
 	vasProviderRoutes := router.Group("/vas-providers")
 	vasServiceRoutes := router.Group("/vas-services")
 	userRoutes := router.Group("/users")
+	customerRoutes := router.Group("/customers")
 	{
 		InitializeAdminRoutes(adminRoutes)
 		InitializeOrganizationRoutes(organizationRoutes)
 		InitializeVASProviderRoutes(vasProviderRoutes)
 		InitializeVASServiceRoutes(vasServiceRoutes)
 		InitializeUserRouters(userRoutes)
+		InitializeCustomerRoutes(customerRoutes)
 	}
 }

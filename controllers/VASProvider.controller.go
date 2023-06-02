@@ -1,4 +1,4 @@
-	package controllers
+package controllers
 
 import (
 	"apz-vas/configs"
@@ -62,13 +62,13 @@ func CreateVASProvider() gin.HandlerFunc {
 }
 
 func GetVasProviders() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	return func(c *gin.Context) {
 		var vasProviders []models.VASProvider
 
-		page, limit := ctx.Query("page"), ctx.Query("limit")
+		page, limit := c.Query("page"), c.Query("limit")
 
 		if page == "" {
-			ctx.JSON(400, gin.H{
+			c.JSON(400, gin.H{
 				"error":   "Page is required",
 				"success": false,
 			})
@@ -76,39 +76,73 @@ func GetVasProviders() gin.HandlerFunc {
 		}
 
 		if limit == "" {
-			ctx.JSON(400, gin.H{
+			c.JSON(400, gin.H{
 				"error":   "Limit is required",
 				"success": false,
 			})
 			return
 		}
 
-		offset := utils.GetOffset(page, limit)
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
 
-		if err := configs.DB.Offset(offset).Limit(utils.ConvertStringToInt(limit)).Find(&vasProviders).Error; err != nil {
-			ctx.JSON(400, gin.H{
+		if pageInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		offset := utils.GetOffset(pageInt, limitInt)
+		// get offset
+		var total int64
+
+		if err := configs.DB.Model(&models.VASProvider{}).Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
 			return
 		}
 
-		ctx.JSON(200, gin.H{
-			"success": true,
-			"message": "VAS Providers fetched successfully",
-			"data":    vasProviders,
+		if err := configs.DB.Offset(offset).Limit(limitInt).Find(&vasProviders).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"success":       true,
+			"message":       "VAS Providers fetched successfully",
+			"vas_providers": vasProviders,
+			"metadata": map[string]interface{}{
+				"total": total,
+				"page":  pageInt,
+				"limit": limitInt,
+			},
 		})
 	}
 }
 
 func GetProviderServices() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	return func(c *gin.Context) {
 		var providerService models.ProviderService
 
-		provider_id, page, limit := ctx.Query("provider_id"), ctx.Query("page"), ctx.Query("limit")
+		provider_id, page, limit := c.Query("provider_id"), c.Query("page"), c.Query("limit")
 
 		if provider_id == "" {
-			ctx.JSON(400, gin.H{
+			c.JSON(400, gin.H{
 				"error":   "Provider ID is required",
 				"success": false,
 			})
@@ -116,7 +150,7 @@ func GetProviderServices() gin.HandlerFunc {
 		}
 
 		if page == "" {
-			ctx.JSON(400, gin.H{
+			c.JSON(400, gin.H{
 				"error":   "Page is required",
 				"success": false,
 			})
@@ -124,24 +158,53 @@ func GetProviderServices() gin.HandlerFunc {
 		}
 
 		if limit == "" {
-			ctx.JSON(400, gin.H{
+			c.JSON(400, gin.H{
 				"error":   "Limit is required",
 				"success": false,
 			})
 			return
 		}
 
-		offset := utils.GetOffset(page, limit)
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
 
-		if err := configs.DB.Where("vas_provider_id = ?", provider_id).Offset(offset).Limit(utils.ConvertStringToInt(limit)).Find(&providerService).Error; err != nil {
-			ctx.JSON(400, gin.H{
+		if pageInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		offset := utils.GetOffset(pageInt, limitInt)
+		// get offset
+		var total int64
+
+		if err := configs.DB.Model(&models.ProviderService{}).Where("vas_provider_id = ?", provider_id).Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
 			return
 		}
 
-		ctx.JSON(200, gin.H{
+		if err := configs.DB.Where("vas_provider_id = ?", provider_id).Offset(offset).Limit(limitInt).Find(&providerService).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
 			"success":           true,
 			"message":           "VAS Services of Provider fetched successfully",
 			"provider_services": providerService,
@@ -150,42 +213,7 @@ func GetProviderServices() gin.HandlerFunc {
 	}
 }
 
-func GetVasProvidersWithService() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		var providerServices []models.ProviderService
-		page, limit := ctx.Query("page"), ctx.Query("limit")
-		if page == "" {
-			ctx.JSON(400, gin.H{
-				"error":   "Page is required",
-				"success": false,
-			})
-			return
-		}
 
-		if limit == "" {
-			ctx.JSON(400, gin.H{
-				"error":   "Limit is required",
-				"success": false,
-			})
-			return
-		}
-		offset := utils.GetOffset(page, limit)
-		if err := configs.DB.Preload("VASProvider").Preload("VASService").Offset(offset).Limit(utils.ConvertStringToInt(limit)).Find(&providerServices).Error; err != nil {
-			ctx.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
-
-		ctx.JSON(200, gin.H{
-			"success":           true,
-			"message":           "VAS Providers with their Services fetched successfully",
-			"provider_services": providerServices,
-		})
-
-	}
-}
 
 func UpdateVasProvider() gin.HandlerFunc {
 	return func(ctx *gin.Context) {

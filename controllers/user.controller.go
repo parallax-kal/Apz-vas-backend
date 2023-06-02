@@ -100,8 +100,7 @@ func LoginUser() gin.HandlerFunc {
 	}
 }
 
-func CreateUser(user models.User, admin bool) (*models.User, error) {
-
+func ValidateUser(user models.User) (*models.User, error) {
 	if user.Name == "" {
 		return nil, errors.New("Name is required.")
 	}
@@ -134,6 +133,10 @@ func CreateUser(user models.User, admin bool) (*models.User, error) {
 	// CREATE USER
 
 	user.Password = hashedPassword
+	return &user, nil
+}
+
+func CreateUser(user models.User, admin bool) (*models.User, error) {
 
 	// if err := configs.DB.Create(&user).Error; err != nil {
 	// 	return nil, err
@@ -142,14 +145,14 @@ func CreateUser(user models.User, admin bool) (*models.User, error) {
 	if admin == false {
 		// user model has a default api key generation allow it now
 		if err := configs.DB.Create(&user).Error; err != nil {
-			return nil, errors.New("Email already exists")
+			return nil, err
 		}
 
 	} else {
 		user.Role = "Admin"
 		// check if the user is an admin
 		if err := configs.DB.Select("name", "email", "password", "role").Create(&user).Error; err != nil {
-			return nil, errors.New("Email already exists")
+			return nil, err
 		}
 	}
 

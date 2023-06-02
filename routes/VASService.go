@@ -18,6 +18,23 @@ func InitializeVASServiceRoutes(router *gin.RouterGroup) {
 		middlewares.AdminMiddleware(),
 		controllers.UpdateVasService(),
 	)
+	router.POST("/subscribe-vas-service", middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		controllers.SubScribeService(),
+	)
+
+	router.GET("/get-organization-subscribed-services-with-all",
+		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		controllers.GetOrganizationSubScribedServices(),
+	)
+
+	router.GET("/get-organization-subscribed-services",
+		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		controllers.GetOrganizationSubScribedServices(),
+	)
+
 	router.DELETE("/delete-vas-service",
 		middlewares.AuthMiddleware(),
 		middlewares.AdminMiddleware(),

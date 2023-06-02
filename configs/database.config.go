@@ -71,14 +71,15 @@ func ConnectDb() (*gorm.DB, error) {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(&models.VASService{
-		
-	})
+	db.AutoMigrate(&models.VASService{})
+	db.AutoMigrate(&models.Electricity{})
+	db.AutoMigrate(&models.MobileData{})
+	db.AutoMigrate(&models.MobileAirtime{})
+	db.AutoMigrate(&models.LocalBusTicket{})
+	db.AutoMigrate(&models.NationalBusTicket{})
 	db.AutoMigrate(&models.ProviderService{})
 	db.AutoMigrate(&models.SubScribedServices{})
-	db.AutoMigrate(&models.Customer{})
 	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&models.Customer{})
 	db.AutoMigrate(&models.VASProvider{})
-	db.AutoMigrate(&models.CustomerService{})
-
 }

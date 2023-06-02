@@ -5,7 +5,6 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func SignupOrganization() gin.HandlerFunc {
@@ -18,9 +17,23 @@ func SignupOrganization() gin.HandlerFunc {
 			})
 			return
 		}
-		user, err := CreateUser(organization, false)
-		if err != nil {
+
+		org, validationError := ValidateUser(organization)
+
+		if validationError != nil {
 			c.JSON(400, gin.H{
+				"error":   validationError.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		user, err := CreateUser(*org, false)
+
+		if err != nil {
+			// check if it is about email existing
+
+			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
@@ -32,7 +45,7 @@ func SignupOrganization() gin.HandlerFunc {
 			Role: user.Role,
 		})
 		if err != nil {
-			c.JSON(400, gin.H{
+			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
@@ -67,9 +80,19 @@ func CreateOrganization() gin.HandlerFunc {
 			})
 			return
 		}
-		_, err := CreateUser(organization, false)
-		if err != nil {
+
+		user, validationError := ValidateUser(organization)
+
+		if validationError != nil {
 			ctx.JSON(400, gin.H{
+				"error":   validationError.Error(),
+				"success": false,
+			})
+			return
+		}
+		_, err := CreateUser(*user, false)
+		if err != nil {
+			ctx.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
@@ -85,116 +108,72 @@ func CreateOrganization() gin.HandlerFunc {
 }
 
 func GetOrganizations() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	return func(c *gin.Context) {
 		var organizations []models.User
 		// get page, limit query param
-		page, limit := ctx.Query("page"), ctx.Query("limit")
+		page, limit := c.Query("page"), c.Query("limit")
 		if page == "" {
-			ctx.JSON(400, gin.H{
+			c.JSON(400, gin.H{
 				"error":   "Page is required",
 				"success": false,
 			})
 			return
 		}
 		if limit == "" {
-			ctx.JSON(400, gin.H{
+			c.JSON(400, gin.H{
 				"error":   "Limit is required",
 				"success": false,
 			})
 			return
 		}
-		// get offset
-		offset := utils.GetOffset(page, limit)
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
 
-		if err := configs.DB.Where("role = ?", "Organization").Offset(offset).Limit(utils.ConvertStringToInt(limit)).Find(&organizations).Error; err != nil {
-			ctx.JSON(400, gin.H{
+		if pageInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		offset := utils.GetOffset(pageInt, limitInt)
+		// get offset
+		var total int64
+
+		if err := configs.DB.Model(&models.User{}).Where("role = ?", "Organization").Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
 			return
 		}
 
-		ctx.JSON(200, gin.H{
+		if err := configs.DB.Where("role = ?", "Organization").Offset(offset).Limit(limitInt).Find(&organizations).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
 			"message":       "Organizations retrieved successfully",
 			"organizations": organizations,
-			"success":       true,
-		})
-	}
-}
-
-func GetOrganizationSubScribedServices() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		// get organization from context
-		organization := ctx.MustGet("organization").(models.User)
-		var subScribedServices []models.SubScribedServices
-		// get page, limit query param
-		page, limit := ctx.Query("page"), ctx.Query("limit")
-		if page == "" {
-			ctx.JSON(400, gin.H{
-				"error":   "Page is required",
-				"success": false,
-			})
-			return
-		}
-		if limit == "" {
-			ctx.JSON(400, gin.H{
-				"error":   "Limit is required",
-				"success": false,
-			})
-			return
-		}
-		// get offset
-		offset := utils.GetOffset(page, limit)
-		// get subScribedServices
-		if err := configs.DB.Where("organization_id = ?", organization.ID).Offset(offset).Limit(utils.ConvertStringToInt(limit)).Find(&subScribedServices).Error; err != nil {
-			ctx.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
-		ctx.JSON(200, gin.H{
-			"message":            "SubScribed Services retrieved successfully",
-			"subScribedServices": subScribedServices,
-			"success":            true,
-		})
-	}
-}
-
-func SubScribeService() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		organization := ctx.MustGet("organization").(models.User)
-		var subScribedService models.SubScribedServices
-		if err := ctx.ShouldBindJSON(&subScribedService); err != nil {
-			ctx.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
-
-		// type ServiceId is a struct of model.VASServices, but wanna check if it is there
-		if subScribedService.ServiceId == uuid.Nil {
-			ctx.JSON(400, gin.H{
-				"error":   "ServiceId is required",
-				"success": false,
-			})
-			return
-		}
-
-		// put organizationId in subScribedService
-		subScribedService.APIKey = organization.ID
-		if err := configs.DB.Create(&subScribedService).Error; err != nil {
-			ctx.JSON(400, gin.H{
-				"error":   "SubScribed Service already exists",
-				"success": false,
-			})
-			return
-		}
-		ctx.JSON(200, gin.H{
-			"message": "SubScribed Service created successfully",
+			"metadata": map[string]interface{}{
+				"total": total,
+				"page":  pageInt,
+				"limit": limitInt,
+			},
 			"success": true,
 		})
 	}
-
 }

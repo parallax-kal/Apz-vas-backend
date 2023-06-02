@@ -26,22 +26,85 @@ func GetCustomers() gin.HandlerFunc {
 			return
 		}
 		// get offset
-		offset := utils.GetOffset(page, limit)
-		var customers []models.Customer
-		organization := c.MustGet("user").(models.User)
 
-		if err := configs.DB.Where("api_key = ?", organization.APIKey).Offset(offset).Limit(utils.ConvertStringToInt(limit)).Find(&customers).Error; err != nil {
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
+
+		if pageInt <= 0 {
 			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		offset := utils.GetOffset(pageInt, limitInt)
+		var customers []models.Customer
+		organization := c.MustGet("user_data").(*models.User)
+		// get the metadata(total)
+		var total int64
+		if err := configs.DB.Model(&models.Customer{}).Where("api_key = ?", organization.APIKey).Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
+			return
+		}
+
+		if err := configs.DB.Where("api_key = ?", organization.APIKey).Offset(offset).Limit(limitInt).Find(&customers).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
 		}
 
 		c.JSON(200, gin.H{
+			"success":   true,
 			"message":   "Customers retried successfully",
 			"customers": customers,
-			"success":   true,
+			"metadata": map[string]interface{}{
+				"total": total,
+				"page":  pageInt,
+				"limit": limitInt,
+			},
 		})
 
+	}
+}
+
+func CreateCustomer() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var customer models.Customer
+		if err := c.ShouldBindJSON(&customer); err != nil {
+			c.JSON(400, gin.H{
+				"error":   "Invalid request payload",
+				"success": false,
+			})
+			return
+		}
+
+		organization := c.MustGet("user_data").(*models.User)
+		customer.APIKey = organization.APIKey
+		if err := configs.DB.Create(&customer).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+		c.JSON(201, gin.H{
+			"message":  "Customer created successfully",
+			"customer": customer,
+			"success":  true,
+		})
 	}
 }
