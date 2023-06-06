@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"net/smtp"
 )
 
@@ -23,7 +22,6 @@ func SendMail(email string, subject string, body string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Email Sent Successfully!")
 
 	return nil
 }

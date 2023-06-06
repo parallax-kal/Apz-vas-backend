@@ -26,13 +26,5 @@ func InitializeOrganizationRoutes(router *gin.RouterGroup) {
 		middlewares.AdminMiddleware(),
 		controllers.GetOrganizations(),
 	)
-	router.GET("/subscribedServices",
-		middlewares.OrganizationAPIMiddleware(),
-		controllers.GetOrganizationSubScribedServices(),
-	)
-	router.POST("/subscribeService",
-		middlewares.AuthMiddleware(),
-		middlewares.OrganizationMiddleware(),
-		controllers.SubScribeService(),
-	)
+
 }

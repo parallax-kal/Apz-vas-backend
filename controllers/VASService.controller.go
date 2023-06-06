@@ -185,79 +185,7 @@ func DeleteVasService() gin.HandlerFunc {
 	}
 }
 
-func GetOrganizationSubScribedServices() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// get organization from context
-		organization := c.MustGet("user_data").(models.User)
-		var subScribedServices []models.SubScribedServices
-		// get page, limit query param
-		page, limit := c.Query("page"), c.Query("limit")
-		if page == "" {
-			c.JSON(400, gin.H{
-				"error":   "Page is required",
-				"success": false,
-			})
-			return
-		}
-		if limit == "" {
-			c.JSON(400, gin.H{
-				"error":   "Limit is required",
-				"success": false,
-			})
-			return
-		}
-		// get offset
-		pageInt := utils.ConvertStringToInt(page)
-		limitInt := utils.ConvertStringToInt(limit)
 
-		if pageInt <= 0 {
-			c.JSON(400, gin.H{
-				"error":   "Invalid page numer",
-				"success": false,
-			})
-			return
-		}
-
-		if limitInt <= 0 {
-			c.JSON(400, gin.H{
-				"error":   "Invalid limit numer",
-				"success": false,
-			})
-			return
-		}
-
-		offset := utils.GetOffset(pageInt, limitInt)
-		// get offset
-		var total int64
-
-		if err := configs.DB.Model(&models.SubScribedServices{}).Where("api_key = ?", organization.APIKey).Count(&total).Error; err != nil {
-			c.JSON(500, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
-
-		// get subScribedServices
-		if err := configs.DB.Where("api_key = ?", organization.APIKey).Offset(offset).Limit(limitInt).Find(&subScribedServices).Error; err != nil {
-			c.JSON(500, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
-		c.JSON(200, gin.H{
-			"success":            true,
-			"message":            "SubScribed Services retrieved successfully",
-			"subScribedServices": subScribedServices,
-			"metadata": map[string]interface{}{
-				"total": total,
-				"page":  pageInt,
-				"limit": limitInt,
-			},
-		})
-	}
-}
 
 type OrganizationSubscribedServices struct {
 	models.SubScribedServices

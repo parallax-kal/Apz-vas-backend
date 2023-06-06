@@ -20,13 +20,12 @@ func OrganizationAPIMiddleware() gin.HandlerFunc {
 		organization, err := utils.CheckApiKey(APIKey)
 		if err != nil {
 			ctx.JSON(401, gin.H{
-				"error":   err.Error(),
+				"error":   "Invalid Api Key",
 				"success": false,
 			})
 			ctx.Abort()
 			return
 		}
-		print(organization)
 		ctx.Set("user_data", organization)
 		ctx.Next()
 
