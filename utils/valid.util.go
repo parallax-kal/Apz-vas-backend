@@ -21,6 +21,9 @@ func ValidatePassword(password string) error {
 	if len(password) < 8 {
 		return errors.New("Password must be at least 8 characters")
 	}
+	if len(password) > 72 {
+		return errors.New("Password must be at most 72 characters")
+	}
 	// if !checkPassword(password) {
 	// 	return errors.New("Password must contain at least 1 uppercase, 1 lowercase, 1 digit and 1 special character")
 	// }
@@ -29,9 +32,9 @@ func ValidatePassword(password string) error {
 
 func checkPassword(password string) bool {
 	var (
-		hasUpper = false
-		hasLower = false
-		hasDigit = false
+		hasUpper   = false
+		hasLower   = false
+		hasDigit   = false
 		hasSpecial = false
 	)
 	for _, char := range password {
@@ -48,4 +51,3 @@ func checkPassword(password string) bool {
 	}
 	return hasUpper && hasLower && hasDigit && hasSpecial
 }
-

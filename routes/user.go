@@ -12,6 +12,9 @@ func InitializeUserRouters(router *gin.RouterGroup) {
 		middlewares.AccountSettingsMiddleware(),
 		controllers.AccountSettings(),
 	)
+	router.POST("/signup", controllers.SignupOrganization())
+	router.POST("/google-login", controllers.GoogleLogin())
+	router.POST("/google-signup", controllers.GoogleRegister())
 	router.GET("/get-users",
 		middlewares.SuperAdminMiddleware(),
 		controllers.GetUsers(),

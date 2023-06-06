@@ -39,7 +39,7 @@ func SignupAdmin() gin.HandlerFunc {
 			})
 			return
 		}
-		ctx.JSON(200, gin.H{
+		ctx.JSON(201, gin.H{
 			"message": "Admin created successfully",
 			"success": true,
 			"token":   token,

@@ -4,8 +4,14 @@ import (
 	"apz-vas/configs"
 	"apz-vas/models"
 	"apz-vas/utils"
+	"encoding/json"
 	"errors"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"github.com/gin-gonic/gin"
+	"github.com/vicanso/go-axios"
 )
 
 func GetUser() gin.HandlerFunc {
@@ -19,13 +25,173 @@ func GetUser() gin.HandlerFunc {
 		delete(userMap, "status")
 		delete(userMap, "id")
 
-		if user.Role == "Admin" {
+		if user.Role == "Admin" || user.Role == "SuperAdmin" {
 			delete(userMap, "api_key")
 		}
 		c.JSON(200, gin.H{
 			"success": true,
 			"user":    userMap,
 		})
+	}
+}
+
+func GoogleLogin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString := c.Request.Header.Get("Authorization")
+		tokenSplit := strings.Split(tokenString, "Bearer ")[1]
+
+		var headers = http.Header{
+			"Authorization": []string{"Bearer " + tokenSplit},
+			"Accept":        []string{"application/json"},
+		}
+
+		var query = url.Values{
+			"access_token": []string{tokenSplit},
+		}
+
+		instance := axios.NewInstance(&axios.InstanceConfig{
+			BaseURL: "https://www.googleapis.com/oauth2/v1/userinfo",
+			Headers: headers,
+		})
+
+		var response, err = instance.Get("/", query)
+
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		var user models.User
+		var responseBody map[string]interface{}
+
+		json.Unmarshal(response.Data, &responseBody)
+
+		if err := configs.DB.Where("email = ?", responseBody["email"]).First(&user).Error; err != nil {
+			c.JSON(400, gin.H{
+				"error":   "You don't have an account with us. Please register",
+				"success": false,
+			})
+			return
+		}
+
+		pass := utils.ConvertGoogleIdToPassword(responseBody["id"].(string))
+
+		// check pass
+
+		err = utils.ComparePassword(pass, user.Password)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   "You didn't register with google",
+				"success": false,
+			})
+			return
+		}
+
+		token, err := utils.GenerateToken(
+			utils.UserData{
+				ID:   user.ID,
+				Role: user.Role,
+			},
+		)
+
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"message": "User logged in successfully",
+			"success": true,
+			"token":   token,
+		})
+
+	}
+}
+
+func GoogleRegister() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString := c.Request.Header.Get("Authorization")
+		tokenSplit := strings.Split(tokenString, "Bearer ")[1]
+
+		var headers = http.Header{
+			"Authorization": []string{"Bearer " + tokenSplit},
+			"Accept":        []string{"application/json"},
+		}
+
+		var query = url.Values{
+			"access_token": []string{tokenSplit},
+		}
+
+		instance := axios.NewInstance(&axios.InstanceConfig{
+			BaseURL: "https://www.googleapis.com/oauth2/v1/userinfo",
+			Headers: headers,
+		})
+
+		var response, err = instance.Get("/", query)
+
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		var user models.User
+		var responseBody map[string]interface{}
+
+		json.Unmarshal(response.Data, &responseBody)
+
+		user.Email = responseBody["email"].(string)
+		user.Name = responseBody["name"].(string)
+		var pass = utils.ConvertGoogleIdToPassword(responseBody["id"].(string))
+		newPass, err := utils.HashPassword(pass)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+		user.Password = newPass
+
+		newUser, errr := CreateUser(user, false)
+
+		if errr != nil {
+			c.JSON(400, gin.H{
+				"error":   errr.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		token, err := utils.GenerateToken(
+			utils.UserData{
+				ID:   newUser.ID,
+				Role: newUser.Role,
+			},
+		)
+
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(201, gin.H{
+			"message": "User registered successfully",
+			"success": true,
+			"token":   token,
+		})
+
 	}
 }
 
@@ -138,7 +304,7 @@ func ValidateUser(user models.User) (*models.User, error) {
 
 func CreateUser(user models.User, admin bool) (*models.User, error) {
 
-	if admin == false {
+	if !admin {
 		if err := configs.DB.Create(&user).Error; err != nil {
 			return nil, err
 		}

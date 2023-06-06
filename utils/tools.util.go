@@ -2,8 +2,13 @@ package utils
 
 import (
 	"encoding/json"
+	"os"
 	"strconv"
 )
+
+func ConvertGoogleIdToPassword(googleId string) string {
+	return os.Getenv("GOOGLE_ID_PREFIX") + googleId + os.Getenv("GOOGLE_ID_SUFFIX")
+}
 
 func Contains(arr []string, str string) bool {
 	for _, a := range arr {

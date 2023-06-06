@@ -52,8 +52,8 @@ func SignupOrganization() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(200, gin.H{
-			"message": "Organization created successfully",
+		c.JSON(201, gin.H{
+			"message": "User registered successfully",
 			"success": true,
 			"token":   token,
 		})
@@ -99,7 +99,7 @@ func CreateOrganization() gin.HandlerFunc {
 			return
 		}
 
-		ctx.JSON(200, gin.H{
+		ctx.JSON(201, gin.H{
 			"message": "Organization created successfully",
 			"success": true,
 		})

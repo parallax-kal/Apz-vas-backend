@@ -137,7 +137,7 @@ func GetVasProviders() gin.HandlerFunc {
 
 func GetProviderServices() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var providerService models.ProviderService
+		var vasServices []models.VASService
 
 		provider_id, page, limit := c.Query("provider_id"), c.Query("page"), c.Query("limit")
 
@@ -188,7 +188,7 @@ func GetProviderServices() gin.HandlerFunc {
 		// get offset
 		var total int64
 
-		if err := configs.DB.Model(&models.ProviderService{}).Where("vas_provider_id = ?", provider_id).Count(&total).Error; err != nil {
+		if err := configs.DB.Model(&models.VASService{}).Where("provider_id = ?", provider_id).Count(&total).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
@@ -196,7 +196,7 @@ func GetProviderServices() gin.HandlerFunc {
 			return
 		}
 
-		if err := configs.DB.Where("vas_provider_id = ?", provider_id).Offset(offset).Limit(limitInt).Find(&providerService).Error; err != nil {
+		if err := configs.DB.Where("provider_id = ?", provider_id).Offset(offset).Limit(limitInt).Find(&vasServices).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
@@ -207,13 +207,11 @@ func GetProviderServices() gin.HandlerFunc {
 		c.JSON(200, gin.H{
 			"success":           true,
 			"message":           "VAS Services of Provider fetched successfully",
-			"provider_services": providerService,
+			"provider_services": vasServices,
 		})
 
 	}
 }
-
-
 
 func UpdateVasProvider() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -289,26 +287,7 @@ func DeleteVasProvider() gin.HandlerFunc {
 
 func UpdateProviderService() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		// update
 
-		var providerService models.ProviderService
-
-		if err := ctx.ShouldBindJSON(&providerService); err != nil {
-			ctx.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-		}
-
-		if err := configs.DB.Model(&providerService).Where("ID = ?", providerService.ID).Updates(&providerService).Error; err != nil {
-			ctx.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-		}
-
-		ctx.JSON(200, gin.H{
-			"success": true,
-			"message": "VAS Provider Service updated successfully",
-		})
 	}
 }

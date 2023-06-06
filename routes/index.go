@@ -13,7 +13,7 @@ func InitializeRoutes(router *gin.Engine) {
 	userRoutes := router.Group("/users")
 	customerRoutes := router.Group("/customers")
 
-	mobileRoutes := router.Group("/vas-service/mobile")
+	mobileRoutes := router.Group("/vas-service")
 
 	{
 		InitializeOrganizationRoutes(organizationRoutes)

@@ -3,6 +3,7 @@ package routes
 import (
 	"apz-vas/controllers"
 	"apz-vas/middlewares"
+
 	"github.com/gin-gonic/gin"
 )
 

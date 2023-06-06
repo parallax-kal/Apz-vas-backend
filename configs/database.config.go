@@ -3,10 +3,10 @@ package configs
 import (
 	"apz-vas/models"
 	"fmt"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	"os"
 	"strings"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 // ConnectDb connects to the database
@@ -15,15 +15,20 @@ var DB *gorm.DB
 var Services = []models.VASService{
 	{
 		Name:        "Mobile Airtime",
+		NickName:    "airtime",
+		Rebate:      0.05,
 		Description: "This service allows you to buy mobile airtime",
 	},
 	{
 		Name:        "Mobile Data",
+		NickName:    "bundle",
+		Rebate:      0.05,
 		Description: "This service allows you to buy mobile data bundles",
 	},
 }
 
 var Providers = []models.VASProvider{
+
 	{
 		Name:        "Blue Label",
 		Description: "JSE-listed company that sells innovative technology for mobile commerce to emerging markets in South Africa and abroad. ",
@@ -89,11 +94,33 @@ func migrate(db *gorm.DB) {
 		&models.VASService{},
 		&models.MobileData{},
 		&models.MobileAirtime{},
-		&models.ProviderService{},
-		&models.SubScribedServices{},
+		&models.SubscribedServices{},
 		&models.User{},
 		&models.Customer{},
 		&models.VASProvider{},
 	)
+
+	for _, provider := range Providers {
+		newProvider := db.Create(&provider)
+		if newProvider.Error != nil {
+			fmt.Println(newProvider.Error)
+		}
+	}
+	
+	var providers []models.VASProvider
+	db.Find(&providers)
+	for _, service := range Services {
+		// all the services be of BlueLabel
+		service.ProviderId = providers[0].ID	
+		// create or update
+		newService := db.Create(&service)
+		if newService.Error != nil {
+			fmt.Println(newService.Error)
+		}
+
+	}
+	// FOR EXAMPLE, BLUE LABEL HAS MOBILE AIRTIME AND MOBILE DATA
+
+
 
 }
