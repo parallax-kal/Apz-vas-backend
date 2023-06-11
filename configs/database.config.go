@@ -79,31 +79,18 @@ func connectDb() *gorm.DB {
 			}
 			fmt.Println("Enabled uuid-ossp extension successfully")
 			migrate(db)
+			seed(db)
 			return db
 		} else {
 			panic(err)
 		}
 	}
 	fmt.Println("Connected to database successfully")
-	// migrate(db)
+	migrate(db)
 	return db
 }
 
-func migrate(db *gorm.DB) {
-	db.AutoMigrate(
-		&models.VASService{},
-		&models.MobileData{},
-		&models.MobileAirtime{},
-		&models.SubscribedServices{},
-		&models.User{},
-		&models.Customer{},
-		&models.VASProvider{},
-		&models.Wallet{},
-		&models.Admin{},
-		&models.Organization{},
-		
-	)
-
+func seed(db *gorm.DB) {
 	for _, provider := range providers {
 		newProvider := db.Create(&provider)
 		if newProvider.Error != nil {
@@ -124,5 +111,20 @@ func migrate(db *gorm.DB) {
 
 	}
 	// FOR EXAMPLE, BLUE LABEL HAS MOBILE AIRTIME AND MOBILE DATA
+}
+
+func migrate(db *gorm.DB) {
+	db.AutoMigrate(
+		&models.VASService{},
+		&models.MobileData{},
+		&models.MobileAirtime{},
+		&models.SubscribedServices{},
+		&models.User{},
+		&models.Customer{},
+		&models.VASProvider{},
+		&models.Wallet{},
+		&models.Admin{},
+		&models.Organization{},
+	)
 
 }

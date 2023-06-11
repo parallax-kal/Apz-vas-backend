@@ -5,11 +5,10 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"encoding/json"
-
 	"github.com/gin-gonic/gin"
 )
 
-func GetOrganizationYourData() gin.HandlerFunc {
+func GetYourOrganizationData() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user = c.MustGet("user_data").(models.User)
 
@@ -76,7 +75,7 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 			organizationBody["bankName"] = organization.Bank_Name
 		}
 		organizationBody["accountNumber"] = organization.Account_Number
-		organizationBody["externalUniqueId"] = organization.ID.String()
+		organizationBody["externalUniqueId"] = organization.ID
 
 		if organization.Bank_Name != "" && organization.Account_Number != "" {
 			organizationBody["bankDetails"] = []map[string]interface{}{
@@ -93,6 +92,14 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 
 		if organization.Organization_Type != "" {
 			organizationBody["type"] = organization.Organization_Type
+		}
+
+		if organization.Industrial_Classification != "" {
+			organizationBody["industrialClassification"] = organization.Industrial_Classification
+		}
+
+		if organization.Industrial_Sector != "" {
+			organizationBody["industrialSector"] = organization.Industrial_Sector
 		}
 
 		if organization.Registration_Date != "" {
@@ -138,7 +145,15 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 				}
 
 				response, ukesheResponseError = configs.UkhesheClient.Post("/organisations", organizationBody)
-				if response.Status != 201 {
+				if ukesheResponseError != nil {
+					c.JSON(500, gin.H{
+						"success": false,
+						"error":   ukesheResponseError.Error(),
+					})
+					return
+				}
+
+				if response.Status != 200 {
 					c.JSON(500, gin.H{
 						"success": false,
 						"error":   responseBody[0]["description"],
@@ -197,6 +212,15 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 				})
 				return
 			}
+
+			if err := configs.DB.Model(&models.Organization{}).Where("id = ?", organization.ID).Update("ukheshe_id", responseBody["organisationId"]).Error; err != nil {
+				c.JSON(500, gin.H{
+					"success": false,
+					"error":   err.Error(),
+				})
+				return
+			}
+
 			c.JSON(201, gin.H{
 				"success": true,
 				"data":    responseBody,

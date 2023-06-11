@@ -13,7 +13,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		tokenString := c.Request.Header.Get("Authorization")
 		if tokenString == "" {
 			c.JSON(401, gin.H{
-				"error":   "Token is missing",
+				"error":   "Invalid Token",
 				"success": false,
 			})
 			c.Abort()

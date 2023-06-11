@@ -59,7 +59,7 @@ func GetCustomers() gin.HandlerFunc {
 			return
 		}
 
-		if err := configs.DB.Where("api_key = ?", organization.APIKey).Offset(offset).Limit(limitInt).Find(&customers).Error; err != nil {
+		if err := configs.DB.Where("organization_id = ?", organization.ID).Offset(offset).Limit(limitInt).Find(&customers).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,

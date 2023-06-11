@@ -20,9 +20,9 @@ func InitializeOrganizationRoutes(router *gin.RouterGroup) {
 		controllers.SignupOrganizationContinue(),
 	)
 
-	router.GET("/get-organization-your-data",
+	router.GET("/get-your-organization-data",
 		middlewares.AuthMiddleware(),
-		controllers.GetOrganizationYourData(),
+		controllers.GetYourOrganizationData(),
 	)
 
 	router.DELETE("/delete-organization",
