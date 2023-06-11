@@ -70,7 +70,7 @@ type VasServiceProvider struct {
 func GetVASServices() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		var user = c.MustGet("user_data").(models.User)
+		// var user = c.MustGet("user_data").(models.User)
 
 		page, limit := c.Query("page"), c.Query("limit")
 		if page == "" {
@@ -112,7 +112,7 @@ func GetVASServices() gin.HandlerFunc {
 		var vasServicesProviders []VasServiceProvider
 		var vasServices []models.VASService
 
-		if user.Role == "Admin" || user.Role == "SuperAdmin" {
+		if 1 == 2 {
 
 			if err := configs.DB.Model(&models.VASService{}).Count(&total).Error; err != nil {
 				c.JSON(500, gin.H{

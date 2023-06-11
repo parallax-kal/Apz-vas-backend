@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"apz-vas/configs"
 	"apz-vas/models"
 	"apz-vas/utils"
 
@@ -17,8 +18,31 @@ func SignupAdmin() gin.HandlerFunc {
 			})
 			return
 		}
-		admin, err := CreateUser(user, false)
+		user.Role = "Admin"
+		newUser, err := CreateUser(user)
+
 		if err != nil {
+			ctx.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		var admin models.Admin
+
+		if err := ctx.ShouldBindJSON(&admin); err != nil {
+			ctx.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		admin.UserId = newUser.ID
+		admin.Role = "Admin"
+
+		if err := configs.DB.Create(&admin).Error; err != nil {
 			ctx.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
@@ -28,13 +52,13 @@ func SignupAdmin() gin.HandlerFunc {
 
 		token, err := utils.GenerateToken(
 			utils.UserData{
-				ID:   admin.ID,
-				Role: admin.Role,
+				ID: newUser.ID,
+				Role: newUser.Role,
 			},
 		)
 		if err != nil {
-			ctx.JSON(400, gin.H{
-				"error":   err.Error(),
+			ctx.JSON(500, gin.H{
+				"error":   "Something went wrong",
 				"success": false,
 			})
 			return

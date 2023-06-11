@@ -20,7 +20,7 @@ func InitializeUserRouters(router *gin.RouterGroup) {
 		controllers.GetUsers(),
 	)
 	router.GET("/me",
-		middlewares.AuthMiddleware(),
+		middlewares.PartialAuthMiddleware(),
 		controllers.GetUser(),
 	)
 }

@@ -3,16 +3,17 @@ package configs
 import (
 	"apz-vas/models"
 	"fmt"
-	"os"
-	"strings"
+	_ "github.com/joho/godotenv/autoload"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"os"
+	"strings"
 )
 
 // ConnectDb connects to the database
-var DB *gorm.DB
+var DB = connectDb()
 
-var Services = []models.VASService{
+var services = []models.VASService{
 	{
 		Name:        "Mobile Airtime",
 		NickName:    "airtime",
@@ -27,7 +28,7 @@ var Services = []models.VASService{
 	},
 }
 
-var Providers = []models.VASProvider{
+var providers = []models.VASProvider{
 
 	{
 		Name:        "Blue Label",
@@ -35,13 +36,14 @@ var Providers = []models.VASProvider{
 	},
 }
 
-func ConnectDb() (*gorm.DB, error) {
+func connectDb() *gorm.DB {
 
 	DBHOST := os.Getenv("DBHOST")
 	DBPORT := os.Getenv("DBPORT")
 	DBUSER := os.Getenv("DBUSER")
 	DBPASS := os.Getenv("DBPASS")
 	DBNAME := os.Getenv("DBNAME")
+
 	fmt.Println("Connecting to database...")
 	dsn := "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " dbname=" + DBNAME + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -53,12 +55,12 @@ func ConnectDb() (*gorm.DB, error) {
 			dsn = "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
 			db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 			if err != nil {
-				return nil, err
+				panic(err)
 			}
 			// Create database
 			err = db.Exec("CREATE DATABASE \"" + DBNAME + "\"").Error
 			if err != nil {
-				return nil, err
+				panic(err)
 			}
 			fmt.Println("Database created successfully")
 			fmt.Println("Connecting to database...")
@@ -66,27 +68,25 @@ func ConnectDb() (*gorm.DB, error) {
 			dsn = "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " dbname=" + DBNAME + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
 			db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 			if err != nil {
-				return nil, err
+				panic(err)
 			}
 			// enable uuid
 			fmt.Println("Connected to database successfully")
 			fmt.Println("Enabling uuid-ossp extension...")
 			err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error
 			if err != nil {
-				return nil, err
+				panic(err)
 			}
 			fmt.Println("Enabled uuid-ossp extension successfully")
 			migrate(db)
-			DB = db
-			return db, nil
+			return db
 		} else {
-			return nil, err
+			panic(err)
 		}
 	}
 	fmt.Println("Connected to database successfully")
-	migrate(db)
-	DB = db
-	return db, nil
+	// migrate(db)
+	return db
 }
 
 func migrate(db *gorm.DB) {
@@ -98,20 +98,24 @@ func migrate(db *gorm.DB) {
 		&models.User{},
 		&models.Customer{},
 		&models.VASProvider{},
+		&models.Wallet{},
+		&models.Admin{},
+		&models.Organization{},
+		
 	)
 
-	for _, provider := range Providers {
+	for _, provider := range providers {
 		newProvider := db.Create(&provider)
 		if newProvider.Error != nil {
 			fmt.Println(newProvider.Error)
 		}
 	}
-	
+
 	var providers []models.VASProvider
 	db.Find(&providers)
-	for _, service := range Services {
+	for _, service := range services {
 		// all the services be of BlueLabel
-		service.ProviderId = providers[0].ID	
+		service.ProviderId = providers[0].ID
 		// create or update
 		newService := db.Create(&service)
 		if newService.Error != nil {
@@ -120,7 +124,5 @@ func migrate(db *gorm.DB) {
 
 	}
 	// FOR EXAMPLE, BLUE LABEL HAS MOBILE AIRTIME AND MOBILE DATA
-
-
 
 }

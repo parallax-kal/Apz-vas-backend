@@ -112,9 +112,8 @@ func BuyAirtime() gin.HandlerFunc {
 			},
 		}
 
-		var blueLabelClient = configs.GetBlueLabelClient()
 
-		var response, err = blueLabelClient.Post("/v2/trade/mobile/airtime/sales", payload)
+		var response, err = configs.BlueLabelCleint.Post("/v2/trade/mobile/airtime/sales", payload)
 
 		if err != nil {
 			c.JSON(500, err)

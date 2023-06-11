@@ -50,9 +50,7 @@ func GetMobileBundleProductsByCategory() gin.HandlerFunc {
 			"category": []string{category},
 		}
 
-		var blueLabelClient = configs.GetBlueLabelClient()
-
-		var response, err = blueLabelClient.Get("/v2/trade/mobile/bundle/products", query)
+		var response, err = configs.BlueLabelCleint.Get("/v2/trade/mobile/bundle/products", query)
 
 		if err != nil {
 			c.JSON(500, gin.H{
@@ -135,9 +133,8 @@ func BuyMobileBundle() gin.HandlerFunc {
 				// "consumerAccountNumber":      "012345",
 			},
 		}
-		var blueLabelClient = configs.GetBlueLabelClient()
 
-		var response, err = blueLabelClient.Post("/v2/trade/mobile/bundle/sales", payload)
+		var response, err = configs.BlueLabelCleint.Post("/v2/trade/mobile/bundle/sales", payload)
 
 		if err != nil {
 			c.JSON(500, err)

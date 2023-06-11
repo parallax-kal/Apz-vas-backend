@@ -6,7 +6,10 @@ import (
 	"os"
 )
 
-func GetBlueLabelClient() *axios.Instance {
+var BlueLabelCleint = getBlueLabelClient()
+
+func getBlueLabelClient() *axios.Instance {
+
 	var blueLabelApiKey = os.Getenv("BLUE_LABEL_API_KEY")
 
 	var blueLabelURL = "https://api.qa.bltelecoms.net"

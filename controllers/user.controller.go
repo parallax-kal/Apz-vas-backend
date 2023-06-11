@@ -17,17 +17,12 @@ import (
 func GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user := c.MustGet("user_data").(models.User)
-
 		userMap := utils.StructToMap(user)
 		delete(userMap, "password")
 		delete(userMap, "updated_at")
 		delete(userMap, "created_at")
-		delete(userMap, "status")
 		delete(userMap, "id")
 
-		if user.Role == "Admin" || user.Role == "SuperAdmin" {
-			delete(userMap, "api_key")
-		}
 		c.JSON(200, gin.H{
 			"success": true,
 			"user":    userMap,
@@ -151,17 +146,9 @@ func GoogleRegister() gin.HandlerFunc {
 		user.Email = responseBody["email"].(string)
 		user.Name = responseBody["name"].(string)
 		var pass = utils.ConvertGoogleIdToPassword(responseBody["id"].(string))
-		newPass, err := utils.HashPassword(pass)
-		if err != nil {
-			c.JSON(500, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
-		user.Password = newPass
+		user.Password = pass
 
-		newUser, errr := CreateUser(user, false)
+		newUser, errr := CreateUser(user)
 
 		if errr != nil {
 			c.JSON(400, gin.H{
@@ -266,56 +253,55 @@ func LoginUser() gin.HandlerFunc {
 	}
 }
 
-func ValidateUser(user models.User) (*models.User, error) {
+func ValidateUser(user models.User) error {
 	if user.Name == "" {
-		return nil, errors.New("Name is required.")
+		return errors.New("Name is required.")
 	}
 	if len(user.Name) < 3 {
-		return nil, errors.New("Name must be at least 3 characters")
+		return errors.New("Name must be at least 3 characters")
 	}
 
 	if len(user.Name) > 25 {
-		return nil, errors.New("Name must be at most 25 characters")
+		return errors.New("Name must be at most 25 characters")
 	}
 
 	// VALIDATE EMAIL
 	emailError := utils.ValidateEmail(user.Email)
 	if emailError != nil {
-		return nil, errors.New(emailError.Error())
+		return errors.New(emailError.Error())
 	}
 	// VALIDATE PASSWORD
 	passwordError := utils.ValidatePassword(user.Password)
 	if passwordError != nil {
 
-		return nil, passwordError
+		return passwordError
 	}
 
 	// Hash the password
 	hashedPassword, err := utils.HashPassword(user.Password)
 	if err != nil {
 
-		return nil, err
+		return err
 	}
 	// CREATE USER
 
 	user.Password = hashedPassword
-	return &user, nil
+	return nil
 }
 
-func CreateUser(user models.User, admin bool) (*models.User, error) {
+func CreateUser(user models.User) (*models.User, error) {
 
-	if !admin {
-		if err := configs.DB.Create(&user).Error; err != nil {
-			return nil, err
-		}
+	newPass, err := utils.HashPassword(user.Password)
 
-	} else {
-		user.Role = "Admin"
-		if err := configs.DB.Select("name", "email", "password", "role").Create(&user).Error; err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, err
 	}
 
+	user.Password = newPass
+
+	if err := configs.DB.Create(&user).Error; err != nil {
+		return nil, err
+	}
 	return &user, nil
 
 }

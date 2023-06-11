@@ -1,22 +1,16 @@
 package main
 
 import (
-	"apz-vas/configs"
 	"apz-vas/routes"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
-	// gin.SetMode(gin.ReleaseMode)
-	router := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
 
-	_, err := configs.ConnectDb()
-	if err != nil {
-		panic(err)
-	}
+	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},

@@ -13,7 +13,7 @@ func InitializeMobileRoutes(router *gin.RouterGroup) {
 
 	router.GET("/bundle/categories", middlewares.Check(), mobile.GetMobileBundleCategories())
 
-	router.GET("/bundle/get-products-by-category", middlewares.Check(), mobile.GetMobileBundleProductsByCategory())
+	router.GET("/bundle/get-products-by-category", mobile.GetMobileBundleProductsByCategory())
 
 	router.POST("/bundle/buy-bundle", middlewares.OrganizationAPIMiddleware(), middlewares.Check(), mobile.BuyMobileBundle())
 

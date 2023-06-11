@@ -48,10 +48,10 @@ func GetCustomers() gin.HandlerFunc {
 
 		offset := utils.GetOffset(pageInt, limitInt)
 		var customers []models.Customer
-		organization := c.MustGet("user_data").(*models.User)
+		organization := c.MustGet("organization_data").(*models.Organization)
 		// get the metadata(total)
 		var total int64
-		if err := configs.DB.Model(&models.Customer{}).Where("api_key = ?", organization.APIKey).Count(&total).Error; err != nil {
+		if err := configs.DB.Model(&models.Customer{}).Where("organization_id = ?", organization.ID).Count(&total).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
@@ -93,7 +93,7 @@ func CreateCustomer() gin.HandlerFunc {
 		}
 
 		organization := c.MustGet("user_data").(*models.User)
-		customer.APIKey = organization.APIKey
+		customer.OrganizationId = organization.ID
 		if err := configs.DB.Create(&customer).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),

@@ -3,6 +3,7 @@ package routes
 import (
 	"apz-vas/controllers"
 	"apz-vas/middlewares"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,6 +13,16 @@ func InitializeOrganizationRoutes(router *gin.RouterGroup) {
 	router.POST("/create-organization",
 		middlewares.AuthMiddleware(),
 		controllers.CreateOrganization(),
+	)
+
+	router.POST("/signup",
+		middlewares.PartialAuthMiddleware(),
+		controllers.SignupOrganizationContinue(),
+	)
+
+	router.GET("/get-organization-your-data",
+		middlewares.AuthMiddleware(),
+		controllers.GetOrganizationYourData(),
 	)
 
 	router.DELETE("/delete-organization",

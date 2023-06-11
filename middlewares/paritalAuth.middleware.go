@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
+func PartialAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.Request.Header.Get("Authorization")
 		if tokenString == "" {
@@ -33,15 +33,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		if err := configs.DB.Select("status, role, name, id", "email").Where("id = ?", userData.ID).First(&user).Error; err != nil {
 			c.JSON(401, gin.H{
 				"error":   "Invalid token",
-				"success": false,
-			})
-			c.Abort()
-			return
-		}
-
-		if user.Status != "Active" {
-			c.JSON(401, gin.H{
-				"error":   "User is not active",
 				"success": false,
 			})
 			c.Abort()
