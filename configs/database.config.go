@@ -113,6 +113,11 @@ func seed(db *gorm.DB) {
 }
 
 func migrate(db *gorm.DB) {
+	err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Enabled uuid-ossp extension successfully")
 	db.AutoMigrate(
 		&models.VASService{},
 		&models.MobileData{},
