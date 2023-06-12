@@ -48,7 +48,8 @@ func connectDb() *gorm.DB {
 	dsn := "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " dbname=" + DBNAME + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
-	// if error is about database does not exist, create the database
+	
+
 	if err != nil {
 		if strings.Contains(err.Error(), "database \""+DBNAME+"\" does not exist") {
 			fmt.Println("Database does not exist, creating database...")

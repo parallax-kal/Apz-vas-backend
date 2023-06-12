@@ -425,7 +425,7 @@ func TopUpWallet() gin.HandlerFunc {
 				fmt.Println(responseBody)
 
 				c.JSON(20, gin.H{
-					"success":      true,
+					"success":    true,
 					"topup_data": responseBody,
 				})
 
@@ -441,15 +441,6 @@ func TopUpWallet() gin.HandlerFunc {
 			var responseBody map[string]interface{}
 
 			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
-
-			// update wallet
-			if err := configs.DB.Model(&models.Topup{}).Where("id = ?", TopupData.ID).Update("ukheshe_id", responseBody["walletId"]).Error; err != nil {
 				c.JSON(500, gin.H{
 					"success": false,
 					"error":   err.Error(),
