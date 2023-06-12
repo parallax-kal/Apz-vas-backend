@@ -27,4 +27,24 @@ func InitializeWalletRoutes(router *gin.RouterGroup) {
 		controllers.CreateWallet(),
 	)
 
+	router.POST("/topup-wallet",
+		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		middlewares.WalletMiddleware(),
+		controllers.TopUpWallet(),
+	)
+
+	router.GET("/get-transaction-history",
+		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		middlewares.WalletMiddleware(),
+	)
+
+	router.POST("/withdraw-wallet",
+		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		middlewares.WalletMiddleware(),
+		controllers.WithDrawWallet(),
+	)
+
 }

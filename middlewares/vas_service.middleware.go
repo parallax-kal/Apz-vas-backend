@@ -1,8 +1,6 @@
 package middlewares
 
 import (
-	// "apz-vas/models"
-
 	"github.com/gin-gonic/gin"
 )
 

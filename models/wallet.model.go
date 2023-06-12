@@ -9,7 +9,6 @@ type Wallet struct {
 	Name           string    `gorm:"<-;not null;type:varchar(255)" json:"name"`
 	OrganizationId uuid.UUID `gorm:"<-;unique;not null;type:uuid" json:"organization_id"`
 	CardType       string    `gorm:"<-;not null;type:varchar(255);default:virtual" json:"card_type"`
-	SearchBy       string    `gorm:"<-;not null;type:varchar(255);default:lastName" json:"search_by"`
 	WalletTypeID   uint32    `gorm:"<-;not null;type:int" json:"wallet_type_id"`
 	Ukheshe_Id     uint32    `gorm:"<-;unique;not null;type:int" json:"ukheshe_id"`
 	Description    string    `gorm:"<-;not null;type:varchar(255)" json:"description"`

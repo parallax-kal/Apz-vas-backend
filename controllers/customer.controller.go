@@ -92,7 +92,7 @@ func CreateCustomer() gin.HandlerFunc {
 			return
 		}
 
-		organization := c.MustGet("user_data").(*models.User)
+		organization := c.MustGet("organization_data").(*models.Organization)
 		customer.OrganizationId = organization.ID
 		if err := configs.DB.Create(&customer).Error; err != nil {
 			c.JSON(500, gin.H{
