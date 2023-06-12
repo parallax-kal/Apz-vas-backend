@@ -45,10 +45,18 @@ func connectDb() *gorm.DB {
 	DBNAME := os.Getenv("DBNAME")
 
 	fmt.Println("Connecting to database...")
+	// delete database
+	dd := "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
+	ddd, err := gorm.Open(postgres.Open(dd), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+	err = ddd.Exec("DROP DATABASE IF EXISTS \"" + DBNAME + "\"").Error
+	if err != nil {
+		panic(err)
+	}
 	dsn := "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " dbname=" + DBNAME + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-
-	
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})	
 
 	if err != nil {
 		if strings.Contains(err.Error(), "database \""+DBNAME+"\" does not exist") {
