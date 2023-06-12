@@ -25,6 +25,13 @@ func GetWalletTypes() gin.HandlerFunc {
 		}
 
 		var responseBody []map[string]interface{}
+		if response.Status != 200 {
+			c.JSON(response.Status, gin.H{
+				"success": false,
+				"error":   responseBody[0]["description"],
+			})
+			return
+		}
 
 		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
 			c.JSON(500, gin.H{
@@ -94,6 +101,8 @@ func CreateWallet() gin.HandlerFunc {
 		response, err := UkhesheClient.Post("/organisations/"+utils.ConvertIntToString(int(organization.Ukheshe_Id))+"/wallets", walletBody)
 
 		if err != nil {
+			// delete wallet
+			configs.DB.Where("id = ?", wallet.ID).Delete(&wallet)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),
@@ -101,9 +110,20 @@ func CreateWallet() gin.HandlerFunc {
 			return
 		}
 
+		if response.Status != 200 {
+			configs.DB.Where("id = ?", wallet.ID).Delete(&wallet)
+			var responseBody []map[string]interface{}
+			c.JSON(response.Status, gin.H{
+				"success": false,
+				"error":   responseBody[0]["description"],
+			})
+			return
+		}
+
 		var responseBody map[string]interface{}
 
 		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+			configs.DB.Where("id = ?", wallet.ID).Delete(&wallet)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),
@@ -113,6 +133,7 @@ func CreateWallet() gin.HandlerFunc {
 
 		// update wallet
 		if err := configs.DB.Model(&models.Wallet{}).Where("id = ?", wallet.ID).Update("ukheshe_id", responseBody["walletId"]).Error; err != nil {
+			configs.DB.Where("id = ?", wallet.ID).Delete(&wallet)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),
@@ -261,5 +282,75 @@ func TopUpWallet() gin.HandlerFunc {
 			"success":    true,
 			"topup_data": responseBody,
 		})
+	}
+}
+
+func GetTransactionHistory() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// get transaction_type param
+		transaction_type := c.Param("transaction_type")
+		allowedValues := []string{"transaction", "topup", "withdraw"}
+		found := false
+		for _, value := range allowedValues {
+			if transaction_type == value {
+				found = true
+				break
+			}
+		}
+
+		// If the value is not found, reject the request with a "Not Found" response
+		if !found {
+			c.Redirect(404, "/*")
+			return
+		}
+
+		page, limit := c.Query("page"), c.Query("limit")
+		if page == "" {
+			c.JSON(400, gin.H{
+				"error":   "Page is required",
+				"success": false,
+			})
+			return
+		}
+		if limit == "" {
+			c.JSON(400, gin.H{
+				"error":   "Limit is required",
+				"success": false,
+			})
+			return
+		}
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
+
+		if pageInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		// offset := utils.GetOffset(pageInt, limitInt)
+		// get offset
+		var total int64
+
+		c.JSON(200, gin.H{
+			"transaction_history": []interface{}{},
+			"metadata": map[string]interface{}{
+				"limit": limitInt,
+				"page":  pageInt,
+				"total": total,
+			},
+			"success": true,
+		})
+
 	}
 }

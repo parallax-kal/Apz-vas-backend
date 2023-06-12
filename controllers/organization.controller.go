@@ -115,6 +115,7 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 		var response, ukesheResponseError = UkhesheClient.Post("/organisations", organizationBody)
 
 		if ukesheResponseError != nil {
+			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   ukesheResponseError.Error(),
@@ -122,9 +123,28 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 			return
 		}
 
+		if response.Status != 200 {
+			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+			var responseBody []map[string]interface{}
+			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+				configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+				c.JSON(500, gin.H{
+					"success": false,
+					"error":   err.Error(),
+				})
+				return
+			}
+			c.JSON(response.Status, gin.H{
+				"success": false,
+				"error":   responseBody[0]["description"],
+			})
+			return
+		}
+
 		var responseBody map[string]interface{}
 
 		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),
@@ -133,6 +153,7 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 		}
 
 		if err := configs.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("status", "Active").Error; err != nil {
+			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),
@@ -141,6 +162,7 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 		}
 
 		if err := configs.DB.Model(&models.Organization{}).Where("id = ?", organization.ID).Update("ukheshe_id", responseBody["organisationId"]).Error; err != nil {
+			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),

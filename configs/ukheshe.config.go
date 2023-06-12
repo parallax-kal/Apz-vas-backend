@@ -18,8 +18,6 @@ var (
 	tokenDuration = 15 * time.Minute
 )
 
-
-
 func RefreshTokenPeriodically() {
 	// Initially, perform the authentication and get the token
 
@@ -39,43 +37,49 @@ func RefreshTokenPeriodically() {
 }
 
 func authenticate() {
-	fmt.Println("authenticating...")
-	var ukheshe_link = os.Getenv("UKHESHE_LINK")
-	// Send a request to renew the token
-	resp, err := axios.Post(ukheshe_link + "/eclipse-conductor/rest/v1/authentication/renew", map[string]interface{}{
-		"jwt": token,
-	}, nil)
+	for {
 
-	if err != nil {
-		panic(err)
+		fmt.Println("authenticating...")
+		var ukheshe_link = os.Getenv("UKHESHE_LINK")
+		// Send a request to renew the token
+		resp, err := axios.Post(ukheshe_link+"/eclipse-conductor/rest/v1/authentication/renew", map[string]interface{}{
+			"jwt": token,
+		}, nil)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			continue
+		}
+
+		if resp.Status != 200 {
+			fmt.Println("Failed to renew the token")
+			continue
+		}
+		// Parse the response and update the stored token
+		tokenMutex.Lock()
+
+		var responseBody map[string]interface{}
+
+		json.Unmarshal(resp.Data, &responseBody)
+
+		var tokendata = responseBody["headerValue"].(string)
+		var tokensplit = strings.Split(tokendata, "Bearer ")[1]
+		token = tokensplit
+		expiresStr := responseBody["expires"].(string)
+		expires, _ := time.Parse(time.RFC3339, expiresStr)
+
+		// Convert the expiration time to GMT
+		location, err := time.LoadLocation("GMT")
+		if err != nil {
+			continue
+		}
+		expires = expires.In(location)
+
+		tokenExpires = expires
+		tokenMutex.Unlock()
+		fmt.Println("Authenticated")
+		break
 	}
-
-	if resp.Status != 200 {
-		panic("Failed to renew the token")
-	}
-	// Parse the response and update the stored token
-	tokenMutex.Lock()
-
-	var responseBody map[string]interface{}
-
-	json.Unmarshal(resp.Data, &responseBody)
-
-	var tokendata = responseBody["headerValue"].(string)
-	var tokensplit = strings.Split(tokendata, "Bearer ")[1]
-	token = tokensplit
-	expiresStr := responseBody["expires"].(string)
-	expires, _ := time.Parse(time.RFC3339, expiresStr)
-
-	// Convert the expiration time to GMT
-	location, err := time.LoadLocation("GMT")
-	if err != nil {
-		panic(err)
-	}
-	expires = expires.In(location)
-
-	tokenExpires = expires
-	tokenMutex.Unlock()
-	fmt.Println("Authenticated")
 }
 
 func MakeAuthenticatedRequest(add_tenant_id bool) *axios.Instance {
