@@ -1,7 +1,10 @@
 package main
 
 import (
+	// "apz-vas/configs"
+	"apz-vas/configs"
 	"apz-vas/routes"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
@@ -9,7 +12,7 @@ import (
 
 func main() {
 	gin.SetMode(gin.ReleaseMode)
-
+	go configs.RefreshTokenPeriodically()
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
@@ -33,7 +36,7 @@ func main() {
 	})
 
 	routes.InitializeRoutes(router)
-
+	
 	// router.SetTrustedProxies(nil)
 
 	router.Run(":5000")

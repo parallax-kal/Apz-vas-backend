@@ -110,7 +110,9 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 			organizationBody["businessType"] = organization.BusinessType
 		}
 
-		var response, ukesheResponseError = configs.UkhesheClient.Post("/organisations", organizationBody)
+		var UkhesheClient = configs.MakeAuthenticatedRequest(true)
+
+		var response, ukesheResponseError = UkhesheClient.Post("/organisations", organizationBody)
 
 		if ukesheResponseError != nil {
 			c.JSON(500, gin.H{
@@ -120,113 +122,37 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 			return
 		}
 
-		if response.Status != 200 {
+		var responseBody map[string]interface{}
 
-			var responseBody []map[string]interface{}
-
-			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
-
-			var expired = configs.CheckTokenExpiry(responseBody[0])
-			if expired {
-				var err = configs.RenewUkhesheToken()
-
-				if err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-
-				response, ukesheResponseError = configs.UkhesheClient.Post("/organisations", organizationBody)
-				if ukesheResponseError != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   ukesheResponseError.Error(),
-					})
-					return
-				}
-
-				if response.Status != 200 {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   responseBody[0]["description"],
-					})
-					return
-				}
-
-				var responseBody map[string]interface{}
-
-				if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-
-				// set user status to active
-				if err := configs.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("status", "Active").Error; err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-
-				c.JSON(201, gin.H{
-					"success": true,
-					"data":    responseBody,
-				})
-
-			} else {
-				c.JSON(response.Status, gin.H{
-					"success": false,
-					"error":   responseBody[0]["description"],
-				})
-				return
-			}
-
-		} else {
-
-			var responseBody map[string]interface{}
-
-			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
-
-			if err := configs.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("status", "Active").Error; err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
-
-			if err := configs.DB.Model(&models.Organization{}).Where("id = ?", organization.ID).Update("ukheshe_id", responseBody["organisationId"]).Error; err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
-
-			c.JSON(201, gin.H{
-				"success": true,
-				"data":    responseBody,
+		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
 			})
-
+			return
 		}
+
+		if err := configs.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("status", "Active").Error; err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		if err := configs.DB.Model(&models.Organization{}).Where("id = ?", organization.ID).Update("ukheshe_id", responseBody["organisationId"]).Error; err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		c.JSON(201, gin.H{
+			"success": true,
+			"data":    responseBody,
+		})
+
 	}
 }
 

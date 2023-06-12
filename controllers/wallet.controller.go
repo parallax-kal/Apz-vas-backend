@@ -12,8 +12,9 @@ import (
 
 func GetWalletTypes() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var UkhesheClient = configs.MakeAuthenticatedRequest(true)
 
-		response, err := configs.UkhesheClient.Get("/wallet-types")
+		response, err := UkhesheClient.Get("/wallet-types")
 
 		if err != nil {
 			c.JSON(500, gin.H{
@@ -22,101 +23,35 @@ func GetWalletTypes() gin.HandlerFunc {
 			})
 			return
 		}
-		if response.Status != 200 {
-			var responseBody []map[string]interface{}
 
-			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
+		var responseBody []map[string]interface{}
 
-			var expired = configs.CheckTokenExpiry(responseBody[0])
-			if expired {
-				var err = configs.RenewUkhesheToken()
-
-				if err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-
-				response, err := configs.UkhesheClient.Get("/wallet-types")
-				if err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-				if response.Status != 200 {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   responseBody[0]["description"],
-					})
-					return
-				}
-
-				var responseBody map[string]interface{}
-
-				if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-
-				// fmt.Println(responseBody)
-
-				c.JSON(200, gin.H{
-					"success":      true,
-					"wallet_types": responseBody,
-				})
-
-			} else {
-				c.JSON(response.Status, gin.H{
-					"success": false,
-					"error":   responseBody[0]["description"],
-				})
-				return
-			}
-
-		} else {
-
-			var responseBody []map[string]interface{}
-
-			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
-
-			// delete the wallet type of mode system
-			for i := 0; i < len(responseBody); i++ {
-				if responseBody[i]["mode"] == "SYSTEM" || responseBody[i]["mode"] == "PREPAID_CARD" {
-					responseBody = append(responseBody[:i], responseBody[i+1:]...)
-				}
-				// delete mode, version, configuration
-				delete(responseBody[i], "mode")
-				delete(responseBody[i], "version")
-				delete(responseBody[i], "configuration")
-			}
-
-			c.JSON(200, gin.H{
-				"success":      true,
-				"wallet_types": responseBody,
+		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
 			})
-
+			return
 		}
 
+		// delete the wallet type of mode system
+		for i := 0; i < len(responseBody); i++ {
+			if responseBody[i]["mode"] == "SYSTEM" || responseBody[i]["mode"] == "PREPAID_CARD" {
+				responseBody = append(responseBody[:i], responseBody[i+1:]...)
+			}
+			// delete mode, version, configuration
+			delete(responseBody[i], "mode")
+			delete(responseBody[i], "version")
+			delete(responseBody[i], "configuration")
+		}
+
+		c.JSON(200, gin.H{
+			"success":      true,
+			"wallet_types": responseBody,
+		})
+
 	}
+
 }
 
 func CreateWallet() gin.HandlerFunc {
@@ -148,13 +83,15 @@ func CreateWallet() gin.HandlerFunc {
 		walletBody["cardType"] = wallet.CardType
 		walletBody["description"] = wallet.Description
 		walletBody["externalUniqueId"] = wallet.ID
+
 		walletBody["name"] = wallet.Name
 
 		// add status as uppercase to the wallet.status
 		walletBody["status"] = strings.ToUpper(wallet.Status)
 		walletBody["walletTypeId"] = wallet.WalletTypeID
+		var UkhesheClient = configs.MakeAuthenticatedRequest(true)
 
-		response, err := configs.UkhesheClient.Post("/organisations/"+utils.ConvertIntToString(int(organization.Ukheshe_Id))+"/wallets", walletBody)
+		response, err := UkhesheClient.Post("/organisations/"+utils.ConvertIntToString(int(organization.Ukheshe_Id))+"/wallets", walletBody)
 
 		if err != nil {
 			c.JSON(500, gin.H{
@@ -164,98 +101,31 @@ func CreateWallet() gin.HandlerFunc {
 			return
 		}
 
-		if response.Status != 200 {
-			var responseBody []map[string]interface{}
+		var responseBody map[string]interface{}
 
-			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
-
-			var expired = configs.CheckTokenExpiry(responseBody[0])
-			if expired {
-				var err = configs.RenewUkhesheToken()
-
-				if err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-
-				response, err := configs.UkhesheClient.Post("/organisations/"+utils.ConvertIntToString(int(organization.Ukheshe_Id))+"/wallets", walletBody)
-				if err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-				if response.Status != 200 {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   responseBody[0]["description"],
-					})
-					return
-				}
-
-				var responseBody map[string]interface{}
-
-				if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-
-				// fmt.Println(responseBody)
-
-				c.JSON(200, gin.H{
-					"success": true,
-					"wallet":  responseBody,
-				})
-
-			} else {
-				c.JSON(response.Status, gin.H{
-					"success": false,
-					"error":   responseBody[0]["description"],
-				})
-				return
-			}
-
-		} else {
-
-			var responseBody map[string]interface{}
-
-			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
-
-			// update wallet
-			if err := configs.DB.Model(&models.Wallet{}).Where("id = ?", wallet.ID).Update("ukheshe_id", responseBody["walletId"]).Error; err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
-
-			c.JSON(201, gin.H{
-				"success": true,
-				"wallet":  responseBody,
+		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
 			})
+			return
 		}
 
+		// update wallet
+		if err := configs.DB.Model(&models.Wallet{}).Where("id = ?", wallet.ID).Update("ukheshe_id", responseBody["walletId"]).Error; err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		c.JSON(201, gin.H{
+			"success": true,
+			"wallet":  responseBody,
+		})
 	}
+
 }
 
 func GetWallet() gin.HandlerFunc {
@@ -363,7 +233,10 @@ func TopUpWallet() gin.HandlerFunc {
 			}
 
 		}
-		response, err := configs.UkhesheClient.Post("/wallets/"+utils.ConvertIntToString(int(wallet.Ukheshe_Id))+"/topups", topupBody)
+
+		var UkhesheClient = configs.MakeAuthenticatedRequest(true)
+
+		response, err := UkhesheClient.Post("/wallets/"+utils.ConvertIntToString(int(wallet.Ukheshe_Id))+"/topups", topupBody)
 
 		if err != nil {
 			fmt.Println(err.Error())
@@ -373,86 +246,20 @@ func TopUpWallet() gin.HandlerFunc {
 			})
 			return
 		}
-		if response.Status != 200 {
-			var responseBody []map[string]interface{}
 
-			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
+		var responseBody map[string]interface{}
 
-			var expired = configs.CheckTokenExpiry(responseBody[0])
-			if expired {
-				var err = configs.RenewUkhesheToken()
-
-				if err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-
-				response, err := configs.UkhesheClient.Post("/wallets/"+utils.ConvertIntToString(int(wallet.Ukheshe_Id))+"/topups", topupBody)
-				if err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-				if response.Status != 200 {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   responseBody[0]["description"],
-					})
-					return
-				}
-
-				var responseBody map[string]interface{}
-
-				if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-					c.JSON(500, gin.H{
-						"success": false,
-						"error":   err.Error(),
-					})
-					return
-				}
-
-				fmt.Println(responseBody)
-
-				c.JSON(20, gin.H{
-					"success":    true,
-					"topup_data": responseBody,
-				})
-
-			} else {
-				c.JSON(response.Status, gin.H{
-					"success": false,
-					"error":   responseBody[0]["description"],
-				})
-				return
-			}
-
-		} else {
-			var responseBody map[string]interface{}
-
-			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-				c.JSON(500, gin.H{
-					"success": false,
-					"error":   err.Error(),
-				})
-				return
-			}
-
-			c.JSON(201, gin.H{
-				"success":    true,
-				"topup_data": responseBody,
+		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
 			})
+			return
 		}
-	}
 
+		c.JSON(201, gin.H{
+			"success":    true,
+			"topup_data": responseBody,
+		})
+	}
 }
