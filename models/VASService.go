@@ -15,7 +15,7 @@ type VASService struct {
 	Name        string    `gorm:"<-;unique;not null;type:varchar(255)" json:"name"`
 	NickName    string    `gorm:"<-;unique;not null;type:varchar(255)" json:"nick_name"`
 	Description string    `gorm:"<-;not null;type:varchar(255)" json:"description"`
-	ProviderId    uuid.UUID `gorm:"<-;not null;type:uuid" json:"provider_id"`
+	ProviderId  uuid.UUID `gorm:"<-;not null;type:uuid" json:"provider_id"`
 	Rebate      float32   `gorm:"<-;not null;type:float;" json:"rebate"`
 	Status      string    `gorm:"<-;not null;type:varchar(255);default:Active" json:"status"`
 	UpdatedAt   int64     `gorm:"autoUpdateTime" json:"updated_at"`
