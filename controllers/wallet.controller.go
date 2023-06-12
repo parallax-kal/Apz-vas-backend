@@ -6,8 +6,11 @@ import (
 	"apz-vas/utils"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func GetWalletTypes() gin.HandlerFunc {
@@ -223,8 +226,6 @@ func TopUpWallet() gin.HandlerFunc {
 			return
 		}
 
-		fmt.Println(TopupData)
-
 		var topupBody = make(map[string]interface{})
 
 		topupBody["amount"] = TopupData.Amount
@@ -268,6 +269,24 @@ func TopUpWallet() gin.HandlerFunc {
 			return
 		}
 
+		if response.Status != 200 {
+			var responseBody []map[string]interface{}
+
+			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+				c.JSON(500, gin.H{
+					"success": false,
+					"error":   err.Error(),
+				})
+				return
+			}
+
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   responseBody[0]["description"],
+			})
+			return
+		}
+
 		var responseBody map[string]interface{}
 
 		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
@@ -278,11 +297,68 @@ func TopUpWallet() gin.HandlerFunc {
 			return
 		}
 
+		if err := saveTopupData(responseBody, wallet.Ukheshe_Id, TopupData.ID); err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
 		c.JSON(201, gin.H{
 			"success":    true,
 			"topup_data": responseBody,
 		})
 	}
+}
+
+func saveTopupData(topupData map[string]interface{}, walletId uint32, topupId uuid.UUID) error {
+	var TopupDataBody map[string]interface{}
+	var UkhesheClient = configs.MakeAuthenticatedRequest(true)
+	fmt.Println(topupData)
+	response, err := UkhesheClient.Get("/wallets/+" + utils.ConvertIntToString(int(walletId)) + "/topups/" + utils.ConvertIntToString(int(topupData["topupId"].(float64))))
+
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(response.Data, &TopupDataBody); err != nil {
+		return err
+	}
+
+	var TopupData models.Topup
+
+	TopupData.Amount = TopupDataBody["amount"].(float64)
+	TopupData.TopupType = TopupDataBody["type"].(string)
+
+	createdAt, err := time.Parse(time.RFC3339, TopupDataBody["created"].(string))
+
+	location, err := time.LoadLocation("GMT")
+
+	if err != nil {
+		return err
+	}
+
+	createdAt = createdAt.In(location)
+
+	TopupData.CreatedAt = createdAt.Unix()
+	TopupData.Currency = TopupDataBody["currency"].(string)
+	TopupData.SubType = TopupDataBody["subType"].(string)
+	TopupData.GateWay = TopupDataBody["gateway"].(string)
+	TopupData.GateWayTransactionId = TopupDataBody["gatewayTransactionId"].(string)
+	TopupData.TopUpId = uint32(TopupDataBody["topupId"].(float64))
+
+	expiresAt, err := time.Parse(time.RFC3339, TopupDataBody["expires"].(string))
+
+	expiresAt = expiresAt.In(location)
+	TopupData.ExpiresAt = expiresAt.Unix()
+	TopupData.Ukheshe_Wallet_Id = TopupDataBody["walletId"].(uint32)
+
+	if err := configs.DB.Model(&models.Topup{}).Where("id = ?", topupId).Updates(&TopupData).Error; err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func GetTransactionHistory() gin.HandlerFunc {
@@ -338,19 +414,101 @@ func GetTransactionHistory() gin.HandlerFunc {
 			return
 		}
 
-		// offset := utils.GetOffset(pageInt, limitInt)
-		// get offset
+		offset := utils.GetOffset(pageInt, limitInt)
+
 		var total int64
 
-		c.JSON(200, gin.H{
-			"transaction_history": []interface{}{},
-			"metadata": map[string]interface{}{
-				"limit": limitInt,
-				"page":  pageInt,
-				"total": total,
-			},
-			"success": true,
-		})
+		if transaction_type == "transaction" {
+			var transaction_history []models.Transaction
+
+			if err := configs.DB.Model(&models.Transaction{}).Count(&total).Error; err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+			if err := configs.DB.Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+
+			c.JSON(200, gin.H{
+				"transaction_history": transaction_history,
+				"metadata": map[string]interface{}{
+					"limit": limitInt,
+					"page":  pageInt,
+					"total": total,
+				},
+				"success": true,
+			})
+
+		} else if transaction_type == "topup" {
+			var transaction_history []models.Topup
+
+			if err := configs.DB.Model(&models.Topup{}).Count(&total).Error; err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+			if err := configs.DB.Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+
+			c.JSON(200, gin.H{
+				"transaction_history": transaction_history,
+				"metadata": map[string]interface{}{
+					"limit": limitInt,
+					"page":  pageInt,
+					"total": total,
+				},
+				"success": true,
+			})
+
+		} else if transaction_type == "withdraw" {
+			var transaction_history []models.Withdraw
+
+			if err := configs.DB.Model(&models.Withdraw{}).Count(&total).Error; err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+			if err := configs.DB.Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+
+			c.JSON(200, gin.H{
+				"transaction_history": transaction_history,
+				"metadata": map[string]interface{}{
+					"limit": limitInt,
+					"page":  pageInt,
+					"total": total,
+				},
+				"success": true,
+			})
+
+		} else {
+			c.JSON(500, gin.H{
+				"error":   "Something Went Wrong",
+				"success": false,
+			})
+			return
+		}
 
 	}
 }

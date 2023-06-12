@@ -4,14 +4,11 @@ import (
 	"apz-vas/configs"
 	"apz-vas/models"
 	"apz-vas/utils"
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		fmt.Println("here")
 		tokenString := c.Request.Header.Get("Authorization")
 		if tokenString == "" {
 			c.JSON(401, gin.H{

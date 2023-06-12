@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	token         string = "eyJraWQiOiIxIiwiYWxnIjoiUFMyNTYifQ.eyJzdWIiOiI2NDA5MTA1MDkwMDg1Iiwic3JjIjoiQXV0aC1SUCIsImNoIjoiRDFNK29RSzZqciIsInJvbGVzIjoiIiwic2VzcyI6IjIxOWZhOGQzLWQwMDItNDQwNC05M2YwLTNhZjI2MmIyOWRiOSIsImlwIjoiNDEuMTg2Ljc4LjkiLCJpc3MiOiJodHRwOi8vZWNsaXBzZS1qYXZhLXNhbmRib3gudWtoZXNoZS5yb2NrcyIsImxvY2FsZSI6ImVuLVVTIiwidWlkIjoxNjUzODYsInBvcyI6W3sibyI6NDkwMiwiZCI6MCwicCI6IkxFVkVMXzAxIn0seyJvIjo0OTAyLCJkIjowLCJwIjoiTEVWRUxfMDIifSx7Im8iOjQ5MDIsImQiOjAsInAiOiJMRVZFTF8wMyJ9LHsibyI6NDkwMiwiZCI6MCwicCI6IkxFVkVMXzA0In0seyJvIjo0OTAyLCJkIjowLCJwIjoiTEVWRUxfMDUifSx7Im8iOjQ5MDIsImQiOjAsInAiOiJMRVZFTF8wNiJ9LHsibyI6NDkwMiwiZCI6MCwicCI6IkxFVkVMXzA3In0seyJvIjo0OTAyLCJkIjowLCJwIjoiTEVWRUxfMDgifSx7Im8iOjQ5MDIsImQiOjAsInAiOiJMRVZFTF8wOSJ9LHsibyI6NDkwMiwiZCI6MCwicCI6IkxFVkVMXzEwIn0seyJvIjo0OTAyLCJkIjowLCJwIjoiVEVOQU5UX1NZU1RFTSJ9XSwiZXhwIjoxNjg2NTg1MDQ5LCJpYXQiOjE2ODY1ODQxNDksInRlbmFudCI6NDkwMn0.iW_fY03I82nuMOVerB4OymN2DJvbAVuTjRZjcOnum6KIsVSD3t7nmvj4l9WtaB1f5daDtdpypruPu7pz4iMIeAsqjta8kiE27aGJyA0yO4rmfIFDoLCom5dGz1CINdXkjgPEpQx-giJt0S1kffINR3ByGqh-cNdm3LS7-xI2B75Se_0aRH1vb14myF_3osj13DycuYUtcE2pEu3w1xlncQxZ31N5CPPhUTTH5aLE8_zJtoZlTTZYqlaMIOhAVtMkv_iIrJhl6ii85rFSk7wj2954KmshqFb5I5L5ECPNabfRQ-OxAadLgj4KQMzKk3Fl1sRuMI2yCiP5dlQG3eHyBQ"
+	token         string = os.Getenv("UKHESHE_TOKEN")
 	tokenMutex    sync.Mutex
 	tokenExpires  time.Time
 	tokenDuration = 15 * time.Minute
@@ -39,7 +39,7 @@ func RefreshTokenPeriodically() {
 func authenticate() {
 	for {
 
-		fmt.Println("authenticating...")
+		fmt.Println("Authenticating...")
 		var ukheshe_link = os.Getenv("UKHESHE_LINK")
 		// Send a request to renew the token
 		resp, err := axios.Post(ukheshe_link+"/eclipse-conductor/rest/v1/authentication/renew", map[string]interface{}{
@@ -77,7 +77,7 @@ func authenticate() {
 
 		tokenExpires = expires
 		tokenMutex.Unlock()
-		fmt.Println("Authenticated")
+		fmt.Println("Authenticated...")
 		break
 	}
 }
