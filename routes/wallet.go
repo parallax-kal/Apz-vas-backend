@@ -18,6 +18,7 @@ func InitializeWalletRoutes(router *gin.RouterGroup) {
 	router.GET("/get-wallet",
 		middlewares.AuthMiddleware(),
 		middlewares.OrganizationMiddleware(),
+		middlewares.WalletMiddleware(),
 		controllers.GetWallet(),
 	)
 
@@ -41,11 +42,11 @@ func InitializeWalletRoutes(router *gin.RouterGroup) {
 		controllers.GetTransactionHistory(),
 	)
 
-	router.POST("/withdraw-wallet",
+	router.POST("/withdraw-from-wallet",
 		middlewares.AuthMiddleware(),
 		middlewares.OrganizationMiddleware(),
 		middlewares.WalletMiddleware(),
-		controllers.WithDrawWallet(),
+		controllers.WithDrawFromWallet(),
 	)
 
 }

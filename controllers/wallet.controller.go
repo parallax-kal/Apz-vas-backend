@@ -6,7 +6,6 @@ import (
 	"apz-vas/utils"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -97,7 +96,7 @@ func CreateWallet() gin.HandlerFunc {
 		walletBody["name"] = wallet.Name
 
 		// add status as uppercase to the wallet.status
-		walletBody["status"] = strings.ToUpper(wallet.Status)
+		walletBody["status"] = "ACTIVE"
 		walletBody["walletTypeId"] = wallet.WalletTypeID
 		var UkhesheClient = configs.MakeAuthenticatedRequest(true)
 
@@ -154,32 +153,12 @@ func CreateWallet() gin.HandlerFunc {
 
 func GetWallet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var wallet models.Wallet
-
-		organization := c.MustGet("organization_data").(models.Organization)
-
-		if err := configs.DB.Where("organization_id = ?", organization.ID).First(&wallet).Error; err != nil {
-			if err.Error() == "record not found" {
-				c.JSON(200, gin.H{
-					"message": "No Wallet Created yet",
-					"wallet":  nil,
-					"success": true,
-				})
-
-			} else {
-
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-			}
-
-			return
-		}
+		
+		var wallet_body = c.MustGet("wallet_data").(map[string]interface{})
 
 		c.JSON(200, gin.H{
 			"success": true,
-			"wallet":  wallet,
+			"wallet":  wallet_body,
 		})
 	}
 }
@@ -194,9 +173,115 @@ type TopupCard struct {
 	Pan            string `json:"pan"`
 }
 
-func WithDrawWallet() gin.HandlerFunc {
+func WithDrawFromWallet() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// post https://eclipse-java-sandbox.ukheshe.rocks/eclipse-conductor/rest/v1/tenants/{tenantId}/wallets/{walletId}/withdrawals
+		var wallet = c.MustGet("wallet_data").(map[string]interface{})
+		var withdraw models.Withdraw
 
+		if err := c.ShouldBindJSON(&withdraw); err != nil {
+			fmt.Println(err.Error())
+			c.JSON(400, gin.H{
+				"error":   "Invalid request payload",
+				"success": false,
+			})
+			return
+		}
+
+		var organization = c.MustGet("organization_data").(models.Organization)
+
+		withdraw.WalletId = utils.ConvertStringToUUID(wallet["externalUniqueId"].(string))
+		if withdraw.DeliveryToPhone == "" {
+			withdraw.DeliveryToPhone = organization.Phone_Number1
+		}
+		if err := configs.DB.Create(&withdraw).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		var withdrawBody = make(map[string]interface{})
+
+		withdrawBody["amount"] = withdraw.Amount
+		withdrawBody["externalUniqueId"] = withdraw.ID
+		withdrawBody["location"] = c.ClientIP()
+		if withdraw.Type == "ZA_NEDBANK_EFT" || withdraw.Type == "ZA_NEDBANK_EFT_IMMEDIATE" {
+			if withdraw.AccountName != "" && withdraw.AccountNumber != "" && withdraw.Bank != "" && withdraw.BankCountry != "" && withdraw.BranchCode != "" {
+				withdrawBody["accountName"] = withdraw.AccountName
+				withdrawBody["accountNumber"] = withdraw.AccountNumber
+				withdrawBody["bank"] = withdraw.Bank
+				withdrawBody["bankCountry"] = withdraw.BankCountry
+				withdrawBody["branchCode"] = withdraw.BranchCode
+			} else {
+				configs.DB.Where("id = ?", withdraw.ID).Delete(&withdraw)
+				c.JSON(500, gin.H{
+					"error":   "Enter Bank Account Data",
+					"success": false,
+				})
+				return
+			}
+		}
+		withdrawBody["type"] = withdraw.Type
+		withdrawBody["description"] = "Withdrawing From " + organization.Company_Name + "'s wallet"
+		withdrawBody["deliverToPhone"] = withdraw.DeliveryToPhone
+
+		var Ukheshe_Client = configs.MakeAuthenticatedRequest(true)
+		var response, err = Ukheshe_Client.Post("/wallets/"+utils.ConvertIntToString(int(wallet["walletId"].(float64)))+"/withdrawals", withdrawBody)
+
+		if err != nil {
+			configs.DB.Where("id = ?", withdraw.ID).Delete(&withdraw)
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		if response.Status != 200 {
+			var responseBody []map[string]interface{}
+
+			configs.DB.Where("id = ?", withdraw.ID).Delete(&withdraw)
+
+			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+				c.JSON(500, gin.H{
+					"success": false,
+					"error":   err.Error(),
+				})
+				return
+			}
+
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   responseBody[0]["description"],
+			})
+			return
+		}
+
+		var responseBody map[string]interface{}
+
+		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+			configs.DB.Where("id = ?", withdraw.ID).Delete(&withdraw)
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		// if err := saveTopupData(responseBody, wallet["walletId"].(float64), withdraw.ID); err != nil {
+		// 	configs.DB.Where("id = ?", withdraw.ID).Delete(&withdraw)
+		// 	c.JSON(500, gin.H{
+		// 		"success": false,
+		// 		"error":   err.Error(),
+		// 	})
+		// 	return
+		// }
+		c.JSON(201, gin.H{
+			"success":    true,
+			"topup_data": responseBody,
+		})
 	}
 }
 
@@ -206,7 +291,6 @@ func TopUpWallet() gin.HandlerFunc {
 		var TopupData models.Topup
 
 		if err := c.ShouldBindJSON(&TopupData); err != nil {
-			fmt.Println(err)
 			c.JSON(400, gin.H{
 				"error":   "Invalid request payload",
 				"success": false,
@@ -214,9 +298,9 @@ func TopUpWallet() gin.HandlerFunc {
 			return
 		}
 
-		wallet := c.MustGet("wallet_data").(models.Wallet)
+		wallet := c.MustGet("wallet_data").(map[string]interface{})
 
-		TopupData.WalletId = wallet.ID
+		TopupData.WalletId = utils.ConvertStringToUUID(wallet["externalUniqueId"].(string))
 
 		if err := configs.DB.Create(&TopupData).Error; err != nil {
 			c.JSON(500, gin.H{
@@ -232,8 +316,6 @@ func TopUpWallet() gin.HandlerFunc {
 		topupBody["externalUniqueId"] = TopupData.ID
 		topupBody["type"] = TopupData.Type
 
-		// var landingurl = "http://localhost:5000" + "/dashboard/wallet"
-		// topupBody["landingUrl"] = "http://localhost:5000/dashboard/wallet"
 		if TopupData.Type == "ZA_PEACH_CARD" {
 			var TopupCardData TopupCard
 			if err := c.ShouldBindJSON(&TopupCardData); err != nil {
@@ -258,7 +340,7 @@ func TopUpWallet() gin.HandlerFunc {
 
 		var UkhesheClient = configs.MakeAuthenticatedRequest(true)
 
-		response, err := UkhesheClient.Post("/wallets/"+utils.ConvertIntToString(int(wallet.Ukheshe_Id))+"/topups", topupBody)
+		response, err := UkhesheClient.Post("/wallets/"+utils.ConvertIntToString(int(wallet["walletId"].(float64)))+"/topups", topupBody)
 
 		if err != nil {
 			fmt.Println(err.Error())
@@ -271,6 +353,8 @@ func TopUpWallet() gin.HandlerFunc {
 
 		if response.Status != 200 {
 			var responseBody []map[string]interface{}
+
+			configs.DB.Where("id = ?", TopupData.ID).Delete(&TopupData)
 
 			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
 				c.JSON(500, gin.H{
@@ -290,6 +374,7 @@ func TopUpWallet() gin.HandlerFunc {
 		var responseBody map[string]interface{}
 
 		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+			configs.DB.Where("id = ?", TopupData.ID).Delete(&TopupData)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),
@@ -297,7 +382,8 @@ func TopUpWallet() gin.HandlerFunc {
 			return
 		}
 
-		if err := saveTopupData(responseBody, wallet.Ukheshe_Id, TopupData.ID); err != nil {
+		if err := saveTopupData(responseBody, wallet["walletId"].(float64), TopupData.ID); err != nil {
+			configs.DB.Where("id = ?", TopupData.ID).Delete(&TopupData)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),
@@ -311,7 +397,7 @@ func TopUpWallet() gin.HandlerFunc {
 	}
 }
 
-func saveTopupData(topupData map[string]interface{}, walletId uint32, topupId uuid.UUID) error {
+func saveTopupData(topupData map[string]interface{}, walletId float64, topupId uuid.UUID) error {
 	var TopupDataBody map[string]interface{}
 	var UkhesheClient = configs.MakeAuthenticatedRequest(true)
 	fmt.Println(topupData)
@@ -346,12 +432,15 @@ func saveTopupData(topupData map[string]interface{}, walletId uint32, topupId uu
 	TopupData.GateWay = TopupDataBody["gateway"].(string)
 	TopupData.GateWayTransactionId = TopupDataBody["gatewayTransactionId"].(string)
 	TopupData.TopUpId = uint32(TopupDataBody["topupId"].(float64))
-
-	expiresAt, err := time.Parse(time.RFC3339, TopupDataBody["expires"].(string))
-
-	expiresAt = expiresAt.In(location)
-	TopupData.ExpiresAt = expiresAt.Unix()
-	TopupData.Ukheshe_Wallet_Id = TopupDataBody["walletId"].(uint32)
+	if TopupDataBody["expires"] != nil {
+		expiresAt, err := time.Parse(time.RFC3339, TopupDataBody["expires"].(string))
+		if err != nil {
+			return err
+		}
+		expiresAt = expiresAt.In(location)
+		TopupData.ExpiresAt = expiresAt.Unix()
+		TopupData.Ukheshe_Wallet_Id = TopupDataBody["walletId"].(float64)
+	}
 
 	if err := configs.DB.Model(&models.Topup{}).Where("id = ?", topupId).Updates(&TopupData).Error; err != nil {
 		return err
@@ -419,16 +508,33 @@ func GetTransactionHistory() gin.HandlerFunc {
 		var total int64
 
 		if transaction_type == "transaction" {
-			var transaction_history []models.Transaction
+			var transaction_history []map[string]interface{}
 
-			if err := configs.DB.Model(&models.Transaction{}).Count(&total).Error; err != nil {
+			// https://eclipse-java-sandbox.ukheshe.rocks/eclipse-conductor/rest/v1/tenants/{tenantId}/wallets/{walletId}/transactions
+
+			wallet := c.MustGet("wallet_data").(map[string]interface{})
+
+			var UkhesheClient = configs.MakeAuthenticatedRequest(true)
+
+			response, err := UkhesheClient.Get("/wallets/" + utils.ConvertIntToString(int(wallet["walletId"].(float64))) + "/transactions?limit=" + limit + "&offset=" + utils.ConvertIntToString(offset))
+
+			if err != nil {
 				c.JSON(500, gin.H{
 					"error":   err.Error(),
 					"success": false,
 				})
 				return
 			}
-			if err := configs.DB.Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
+
+			if response.Status != 200 {
+				c.JSON(500, gin.H{
+					"error":   "Something went wrong",
+					"success": false,
+				})
+				return
+			}
+
+			if err := configs.DB.Model(&models.Transaction{}).Count(&total).Error; err != nil {
 				c.JSON(500, gin.H{
 					"error":   err.Error(),
 					"success": false,
@@ -447,7 +553,7 @@ func GetTransactionHistory() gin.HandlerFunc {
 			})
 
 		} else if transaction_type == "topup" {
-			var transaction_history []models.Topup
+			var transaction_history []map[string]interface{}
 
 			if err := configs.DB.Model(&models.Topup{}).Count(&total).Error; err != nil {
 				c.JSON(500, gin.H{
@@ -456,7 +562,31 @@ func GetTransactionHistory() gin.HandlerFunc {
 				})
 				return
 			}
-			if err := configs.DB.Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
+
+			// https://eclipse-java-sandbox.ukheshe.rocks/eclipse-conductor/rest/v1/tenants/{tenantId}/wallets/{walletId}/topups
+
+			wallet := c.MustGet("wallet_data").(map[string]interface{})
+			var UkhesheClient = configs.MakeAuthenticatedRequest(true)
+
+			response, err := UkhesheClient.Get("/wallets/" + utils.ConvertIntToString(int(wallet["walletId"].(float64))) + "/topups?limit=" + limit + "&offset=" + utils.ConvertIntToString(offset))
+
+			if err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+
+			if response.Status != 200 {
+				c.JSON(500, gin.H{
+					"error":   "Something went wrong",
+					"success": false,
+				})
+				return
+			}
+
+			if err := json.Unmarshal(response.Data, &transaction_history); err != nil {
 				c.JSON(500, gin.H{
 					"error":   err.Error(),
 					"success": false,

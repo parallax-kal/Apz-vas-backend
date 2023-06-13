@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "apz-vas/configs"
 	"apz-vas/configs"
 	"apz-vas/routes"
 
