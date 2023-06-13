@@ -77,7 +77,6 @@ func authenticate() {
 
 		tokenExpires = expires
 		tokenMutex.Unlock()
-		fmt.Println(token)
 		fmt.Println("Authenticated.")
 		break
 	}
