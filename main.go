@@ -3,7 +3,6 @@ package main
 import (
 	"apz-vas/configs"
 	"apz-vas/routes"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
@@ -35,7 +34,7 @@ func main() {
 	})
 
 	routes.InitializeRoutes(router)
-	
+
 	// router.SetTrustedProxies(nil)
 
 	router.Run(":5000")

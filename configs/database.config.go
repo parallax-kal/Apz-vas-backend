@@ -47,7 +47,7 @@ func connectDb() *gorm.DB {
 	fmt.Println("Connecting to database...")
 	dsn := "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " dbname=" + DBNAME + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	
+
 	if err != nil {
 		if strings.Contains(err.Error(), "database \""+DBNAME+"\" does not exist") {
 			fmt.Println("Database does not exist, creating database...")
@@ -84,6 +84,7 @@ func connectDb() *gorm.DB {
 			panic(err)
 		}
 	}
+
 	fmt.Println("Connected to database successfully")
 	migrate(db)
 	return db
@@ -120,7 +121,6 @@ func migrate(db *gorm.DB) {
 		&models.MobileAirtime{},
 		&models.SubscribedServices{},
 		&models.User{},
-		&models.Customer{},
 		&models.VASProvider{},
 		&models.Wallet{},
 		&models.Admin{},

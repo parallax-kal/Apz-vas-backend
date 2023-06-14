@@ -61,18 +61,22 @@ type Withdraw struct {
 }
 
 type Transaction struct {
-	ID                uuid.UUID `gorm:"<-:create;unique;not null;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	AuthorizationCode string    `gorm:"<-;not null;type:varchar(255);" json:"authorization_code"`
-	Balance           uint64    `gorm:"<-;not null;type:bigint;" json:"balance"`
-	Currency          string    `gorm:"<-;not null;type:varchar(255);" json:"currency"`
-	ExternalId        string    `gorm:"<-;not null;type:varchar(255)" json:"external_id"`
-	Fee               float32   `gorm:"<-;not null;type:float;" json:"fee"`
-	Location          string    `gorm:"<-;not null;type:varchar(255);" json:"location"`
-	OtherWalletId     uint32    `gorm:"<-;not null;type:int" json:"other_wallet_id"`
-	TransactionId     string    `gorm:"<-;not null;type:varchar(255);" json:"transaction_id"`
-	Type              string    `gorm:"<-;not null;type:varchar(255);" json:"type"`
-	UkhesheWalletId   float64   `gorm:"<-;not null;type:int;" json:"ukhese_wallet_id"`
-	WalletId          uuid.UUID `gorm:"<-;not null;type:uuid;foreignkey:wallet_id;references:ID" json:"wallet_id"`
-	CreatedAt         int64     `gorm:"<-;not null;type:bigint;" json:"created_at"`
-	UpdatedAt         int64     `gorm:"<-;not null;type:bigint;" json:"updated_at"`
+	ID                uuid.UUID                `gorm:"<-:create;unique;not null;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	Description       string                   `gorm:"<-;not null;type:varchar(255);" json:"description"`
+	ServiceData       map[string]interface{} `gorm:"<-;not null;type:varchar(255)" json:"service_data"`
+	ServiceId         uuid.UUID                `gorm:"<-;not null;type:uuid;" json:"service_id"`
+	AuthorizationCode string                   `gorm:"<-;not null;type:varchar(255);" json:"authorization_code"`
+	Amount            uint64                   `gorm:"<-;not null;type:bigint;" json:"amount"`
+	Currency          string                   `gorm:"<-;not null;type:varchar(255);" json:"currency"`
+	ExternalId        uuid.UUID                `gorm:"<-;not null;type:uuid" json:"external_id"`
+	Rebate            float32                  `gorm:"<-;not null;type:float;" json:"rebateI"`
+	Fee               float32                  `gorm:"<-;not null;type:float;" json:"fee"`
+	Location          string                   `gorm:"<-;not null;type:varchar(255);" json:"location"`
+	OtherWalletId     uint32                   `gorm:"<-;not null;type:int" json:"other_wallet_id"`
+	TransactionId     string                   `gorm:"<-;not null;type:varchar(255);" json:"transaction_id"`
+	Type              string                   `gorm:"<-;not null;type:varchar(255);" json:"type"`
+	UkhesheWalletId   float64                  `gorm:"<-;not null;type:int;" json:"ukhese_wallet_id"`
+	WalletId          uuid.UUID                `gorm:"<-;not null;type:uuid;foreignkey:wallet_id;references:ID" json:"wallet_id"`
+	CreatedAt         int64                    `gorm:"<-;not null;type:bigint;" json:"created_at"`
+	UpdatedAt         int64                    `gorm:"<-;not null;type:bigint;" json:"updated_at"`
 }

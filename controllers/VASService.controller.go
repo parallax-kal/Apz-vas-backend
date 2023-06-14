@@ -4,9 +4,30 @@ import (
 	"apz-vas/configs"
 	"apz-vas/models"
 	"apz-vas/utils"
+	"fmt"
+
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
+
+func GetVasServiceData() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var service = c.MustGet("service_data").(models.VASService)
+		var vas_service models.VASService
+		if err := configs.DB.Where("id = ?", service.ID).First(&vas_service).Error; err != nil {
+			c.JSON(404, gin.H{
+				"error":   "VAS Service not found",
+				"success": false,
+			})
+			return
+		}
+		c.JSON(200, gin.H{
+			"success":     true,
+			"message":     "VAS Service retrieved successfully",
+			"vas_service": vas_service,
+		})
+
+	}
+}
 
 func CreateVasService() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -67,10 +88,103 @@ type VasServiceProvider struct {
 	Provider string `json:"provider"`
 }
 
-func GetVASServices() gin.HandlerFunc {
-	return func(c *gin.Context) {
+type VasServiceSubscribed struct {
+	models.VASService
+	Subscribed bool `json:"subscribed"`
+}
 
-		// var user = c.MustGet("user_data").(models.User)
+func GetAdminVASServices() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		page, limit := c.Query("page"), c.Query("limit")
+		if page == "" {
+			c.JSON(400, gin.H{
+				"error":   "Page is required",
+				"success": false,
+			})
+			return
+		}
+		if limit == "" {
+			c.JSON(400, gin.H{
+				"error":   "Limit is required",
+				"success": false,
+			})
+			return
+		}
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
+
+		if pageInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		offset := utils.GetOffset(pageInt, limitInt)
+		// get offset
+		var total int64
+		var vas_services []models.VASService
+		var vas_services_providers []VasServiceProvider
+
+		if err := configs.DB.Model(&models.VASService{}).Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		if err := configs.DB.Select("id, name, description, provider_id, rebate, status").Offset(offset).Limit(limitInt).Find(&vas_services).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		for _, vasService := range vas_services {
+
+			var service_provider models.VASProvider
+			if err := configs.DB.Where("id = ?", vasService.ProviderId).First(&service_provider).Error; err != nil {
+				fmt.Println(err.Error())
+				vas_services_providers = append(vas_services_providers, VasServiceProvider{
+					vasService,
+					service_provider.Name,
+				})
+			} else {
+
+				vas_services_providers = append(vas_services_providers, VasServiceProvider{
+					vasService,
+					service_provider.Name,
+				})
+			}
+		}
+
+		c.JSON(200, gin.H{
+			"message":      "VAS Services retrieved successfully",
+			"success":      true,
+			"vas_services": vas_services_providers,
+			"metadata": map[string]interface{}{
+				"total":           total,
+				"page":            pageInt,
+				"limit":           limitInt,
+			},
+		})
+
+	}
+}
+
+func GetOrganizationVASServices() gin.HandlerFunc {
+	return func(c *gin.Context) {
 
 		page, limit := c.Query("page"), c.Query("limit")
 		if page == "" {
@@ -109,84 +223,65 @@ func GetVASServices() gin.HandlerFunc {
 		offset := utils.GetOffset(pageInt, limitInt)
 		// get offset
 		var total int64
-		var vasServicesProviders []VasServiceProvider
-		var vasServices []models.VASService
+		var vas_services []models.VASService
+		var VasServiceSubscribers []VasServiceSubscribed
 
-		if 1 == 2 {
-
-			if err := configs.DB.Model(&models.VASService{}).Count(&total).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-
-			if err := configs.DB.Select("id, name, description, provider_id, rebate, status").Offset(offset).Limit(limitInt).Find(&vasServices).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-
-			for _, vasService := range vasServices {
-
-				var provider models.VASProvider
-				if err := configs.DB.Where("id = ?", vasService.ProviderId).First(&provider).Error; err != nil {
-					c.JSON(500, gin.H{
-						"error":   err.Error(),
-						"success": false,
-					})
-					return
-				}
-				vasServicesProviders = append(vasServicesProviders, VasServiceProvider{
-					vasService,
-					provider.Name,
-				})
-			}
-			c.JSON(200, gin.H{
-				"message":      "VAS Services retrieved successfully",
-				"success":      true,
-				"vas_services": vasServicesProviders,
-				"metadata": map[string]interface{}{
-					"total": total,
-					"page":  pageInt,
-					"limit": limitInt,
-				},
-			})
-			return
-
-		} else {
-			if err := configs.DB.Model(&models.VASService{}).Where("status = ?", "Active").Count(&total).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-
-			// use ProviderService model to get the rebate on a given service and add it to the service struct
-			if err := configs.DB.Select("id, name, description, nick_name, rebate, status").Where("status = ?", "Active").Offset(offset).Limit(limitInt).Find(&vasServices).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-
-			c.JSON(200, gin.H{
-				"message":      "VAS Services retrieved successfully",
-				"success":      true,
-				"vas_services": vasServices,
-				"metadata": map[string]interface{}{
-					"total": total,
-					"page":  pageInt,
-					"limit": limitInt,
-				},
+		if err := configs.DB.Model(&models.VASService{}).Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
 			})
 			return
 		}
+
+		if err := configs.DB.Select("id, name, description, provider_id, rebate, status").Offset(offset).Limit(limitInt).Find(&vas_services).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+		var totalSubscribed int64
+
+		var organization = c.MustGet("organization_data").(models.Organization)
+		for _, vasService := range vas_services {
+
+			var subscribed_service models.SubscribedServices
+			if err := configs.DB.Where("service_id = ? AND organization_id = ?", vasService.ID, organization.ID).First(&subscribed_service).Error; err != nil {
+				fmt.Println(err.Error())
+				VasServiceSubscribers = append(VasServiceSubscribers, VasServiceSubscribed{
+					vasService,
+					false,
+				})
+			} else {
+
+				VasServiceSubscribers = append(VasServiceSubscribers, VasServiceSubscribed{
+					vasService,
+					true,
+				})
+			}
+		}
+
+		if err := configs.DB.Model(&models.SubscribedServices{}).Where("organization_id = ?", organization.ID).Count(&totalSubscribed).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"message":      "VAS Services retrieved successfully",
+			"success":      true,
+			"vas_services": VasServiceSubscribers,
+			"metadata": map[string]interface{}{
+				"total":           total,
+				"page":            pageInt,
+				"limit":           limitInt,
+				"totalSubscribed": totalSubscribed,
+			},
+		})
+
 	}
 }
 
@@ -242,40 +337,161 @@ func DeleteVasService() gin.HandlerFunc {
 	}
 }
 
-func SubScribeService() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		organization := ctx.MustGet("organization").(models.User)
+func OperationOnService() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		organization := c.MustGet("organization_data").(models.Organization)
 		var subScribedService models.SubscribedServices
-		if err := ctx.ShouldBindJSON(&subScribedService); err != nil {
-			ctx.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
+
+		var operation = c.Param("operation")
+		var operations = []string{
+			"subscribe",
+			"unsubscribe",
+		}
+		found := false
+		for _, value := range operations {
+			if operation == value {
+				found = true
+				break
+			}
+		}
+
+		// If the value is not found, reject the request with a "Not Found" response
+		if !found {
+			c.Redirect(404, "/*")
 			return
 		}
 
-		// type ServiceId is a struct of model.VASServices, but wanna check if it is there
-		if subScribedService.ServiceId == uuid.Nil {
-			ctx.JSON(400, gin.H{
-				"error":   "ServiceId is required",
-				"success": false,
-			})
-			return
-		}
+		var service = c.MustGet("service_data").(models.VASService)
 
-		// put organizationId in subScribedService
-		subScribedService.APIKey = organization.ID
-		if err := configs.DB.Create(&subScribedService).Error; err != nil {
-			ctx.JSON(400, gin.H{
-				"error":   "SubScribed Service already exists",
-				"success": false,
-			})
-			return
+		subScribedService.ServiceId = service.ID
+		if operation == "subscribe" {
+
+			subScribedService.OrganizationId = organization.ID
+			subScribedService.Subscription = organization.ID.String() + "-" + service.ID.String()
+			if err := configs.DB.Create(&subScribedService).Error; err != nil {
+				c.JSON(400, gin.H{
+					"error":   "SubScribed Service already exists",
+					"success": false,
+				})
+				return
+			}
+		} else {
+			if err := configs.DB.Where("service_id = ? AND organization_id = ? ", subScribedService.ServiceId, organization.ID).Delete(&subScribedService).Error; err != nil {
+				c.JSON(400, gin.H{
+					"error":   "SubScribed Service doesn't exists",
+					"success": false,
+				})
+				return
+			}
 		}
-		ctx.JSON(200, gin.H{
+		c.JSON(200, gin.H{
 			"message": "SubScribed Service created successfully",
 			"success": true,
 		})
 	}
 
+}
+
+func GetVasServiceTransactionHistory() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var user = c.MustGet("user_data").(models.User)
+
+		page, limit := c.Query("page"), c.Query("limit")
+
+		var service = c.MustGet("service_data").(models.VASService)
+		if page == "" {
+			c.JSON(400, gin.H{
+				"error":   "Page is required",
+				"success": false,
+			})
+			return
+		}
+		if limit == "" {
+			c.JSON(400, gin.H{
+				"error":   "Limit is required",
+				"success": false,
+			})
+			return
+		}
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
+
+		if pageInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		offset := utils.GetOffset(pageInt, limitInt)
+		// get offset
+		var total int64
+
+		var vas_service_transactions []models.Transaction
+
+		// check where serviceId is equal to the serviceId
+		if user.Role == "Organization" {
+
+			var organization models.Organization
+
+			if err := configs.DB.Where("user_id = ?", user.ID).First(&organization).Error; err != nil {
+				c.JSON(401, gin.H{
+					"error":   "Unauthorized",
+					"success": false,
+				})
+				c.Abort()
+				return
+			}
+			if err := configs.DB.Model(&models.Transaction{}).Where("service_id = ? AND external_id = ?", service.ID, organization.ID).Count(&total).Error; err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+			if err := configs.DB.Model(&models.Transaction{}).Where("service_id = ? AND external_id = ?", service.ID, organization.ID).Offset(offset).Limit(limitInt).Find(&vas_service_transactions).Error; err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+		} else {
+			if err := configs.DB.Model(&models.Transaction{}).Where("service_id = ?", service.ID).Count(&total).Error; err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+			if err := configs.DB.Where("service_id = ?", service.ID).Offset(offset).Limit(limitInt).Find(&vas_service_transactions).Error; err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+		}
+
+		c.JSON(200, gin.H{
+			"message":                  "VAS Service Transaction History retrieved successfully",
+			"success":                  true,
+			"vas_service_transactions": vas_service_transactions,
+			"metadata": map[string]interface{}{
+				"total": total,
+				"page":  pageInt,
+				"limit": limitInt,
+			},
+		},
+		)
+	}
 }

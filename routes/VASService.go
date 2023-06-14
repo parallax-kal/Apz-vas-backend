@@ -3,6 +3,7 @@ package routes
 import (
 	"apz-vas/controllers"
 	"apz-vas/middlewares"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +15,16 @@ func InitializeVASServiceRoutes(router *gin.RouterGroup) {
 		controllers.CreateVasService(),
 	)
 
-	router.GET("/get-vas-services", middlewares.AuthMiddleware(), controllers.GetVASServices())
+	router.GET("/get-organization-vas-services",
+		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		controllers.GetOrganizationVASServices(),
+	)
+	router.GET("/get-admin-vas-services",
+		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		controllers.GetAdminVASServices(),
+	)
 
 	router.PUT("/update-vas-service",
 		middlewares.AuthMiddleware(),
@@ -22,9 +32,23 @@ func InitializeVASServiceRoutes(router *gin.RouterGroup) {
 		controllers.UpdateVasService(),
 	)
 
-	router.POST("/subscribe-vas-service", middlewares.AuthMiddleware(),
+	router.PUT("/:operation",
+		middlewares.AuthMiddleware(),
 		middlewares.OrganizationMiddleware(),
-		controllers.SubScribeService(),
+		middlewares.VASServiceMiddleware(),
+		controllers.OperationOnService(),
+	)
+
+	router.GET("/get-vas-service-data",
+		middlewares.AuthMiddleware(),
+		middlewares.VASServiceMiddleware(),
+		controllers.GetVasServiceData(),
+	)
+
+	router.GET("/get-vas-service-transaction",
+		middlewares.AuthMiddleware(),
+		middlewares.VASServiceMiddleware(),
+		controllers.GetVasServiceTransactionHistory(),
 	)
 
 	router.DELETE("/delete-vas-service",

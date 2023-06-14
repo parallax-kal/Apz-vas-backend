@@ -11,7 +11,6 @@ func InitializeRoutes(router *gin.Engine) {
 	vasProviderRoutes := router.Group("/vas-providers")
 	vasServicesRoutes := router.Group("/vas-services")
 	userRoutes := router.Group("/users")
-	customerRoutes := router.Group("/customers")
 	walletRoutes := router.Group("/wallets")
 	vasServiceRoutes := router.Group("/vas-service")
 
@@ -21,8 +20,7 @@ func InitializeRoutes(router *gin.Engine) {
 		InitializeVASServiceRoutes(vasServicesRoutes)
 		InitializeVASProviderRoutes(vasProviderRoutes)
 		InitializeAdminRoutes(adminRoutes)
-		InitializeCustomerRoutes(customerRoutes)
-		InitializeMobileRoutes(vasServiceRoutes)
+		InitializeVasServiceRoutes(vasServiceRoutes)
 		InitializeWalletRoutes(walletRoutes)
 	}
 }

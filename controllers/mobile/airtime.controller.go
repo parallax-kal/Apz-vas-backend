@@ -6,32 +6,30 @@ import (
 	"apz-vas/utils"
 	"encoding/json"
 	"time"
-
 	"github.com/gin-gonic/gin"
 )
 
 func GetAirtimeVendors() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"airtime_vendors": []map[string]interface{}{
-				{
+		var response, err = configs.BlueLabelCleint.Get("/mobile/airtime/products")
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error":   "Error Getting Airtime Vendors",
+				"success": false,
+			})
+			return
+		}
+		var responseBody []map[string]interface{}
+		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
 
-					"id":   "cellc",
-					"name": "Cell C",
-				},
-				{
-					"id":   "mtn",
-					"name": "MTN",
-				},
-				{
-					"id":   "telkom",
-					"name": "Telkom Mobile",
-				},
-				{
-					"id":   "vodacom",
-					"name": "Vodacom",
-				},
-			},
+		c.JSON(200, gin.H{
+			"airtime_vendors": responseBody,
 			"message": "Airtime Vendors Retrieved successfully",
 			"success": true,
 		})
@@ -112,8 +110,7 @@ func BuyAirtime() gin.HandlerFunc {
 			},
 		}
 
-
-		var response, err = configs.BlueLabelCleint.Post("/v2/trade/mobile/airtime/sales", payload)
+		var response, err = configs.BlueLabelCleint.Post("/mobile/airtime/sales", payload)
 
 		if err != nil {
 			c.JSON(500, err)

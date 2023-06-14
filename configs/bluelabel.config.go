@@ -25,7 +25,7 @@ func getBlueLabelClient() *axios.Instance {
 
 	var blueLabelClient = axios.NewInstance(
 		&axios.InstanceConfig{
-			BaseURL: blueLabelURL,
+			BaseURL: blueLabelURL + "/v2/trade/",
 			Headers: blueLabelHeaders,
 		},
 	)
