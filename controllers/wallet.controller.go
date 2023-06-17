@@ -153,7 +153,7 @@ func CreateWallet() gin.HandlerFunc {
 
 func GetWallet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		
+
 		var wallet_body = c.MustGet("wallet_data").(map[string]interface{})
 
 		c.JSON(200, gin.H{
@@ -450,6 +450,15 @@ func saveTopupData(topupData map[string]interface{}, walletId float64, topupId u
 
 }
 
+type TransactionHistory struct {
+	Amount      float64   `json:"amount"`
+	Rebate      float64   `json:"rebate"`
+	Currency    string    `json:"currency"`
+	CreatedAt   time.Time `json:"created_at"`
+	Description string    `json:"description"`
+	Service     string    `json:"service"`
+}
+
 func GetTransactionHistory() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get transaction_type param
@@ -508,17 +517,11 @@ func GetTransactionHistory() gin.HandlerFunc {
 		var total int64
 
 		if transaction_type == "transaction" {
-			var transaction_history []map[string]interface{}
+			var transaction_history = []models.Transaction{}
+			var transactions = []TransactionHistory{}
+			var wallet = c.MustGet("wallet_data").(map[string]interface{})
 
-			// https://eclipse-java-sandbox.ukheshe.rocks/eclipse-conductor/rest/v1/tenants/{tenantId}/wallets/{walletId}/transactions
-
-			wallet := c.MustGet("wallet_data").(map[string]interface{})
-
-			var UkhesheClient = configs.MakeAuthenticatedRequest(true)
-
-			response, err := UkhesheClient.Get("/wallets/" + utils.ConvertIntToString(int(wallet["walletId"].(float64))) + "/transactions?limit=" + limit + "&offset=" + utils.ConvertIntToString(offset))
-
-			if err != nil {
+			if err := configs.DB.Model(&models.Transaction{}).Where("ukheshe_wallet_id = ?", int(wallet["walletId"].(float64))).Count(&total).Error; err != nil {
 				c.JSON(500, gin.H{
 					"error":   err.Error(),
 					"success": false,
@@ -526,24 +529,37 @@ func GetTransactionHistory() gin.HandlerFunc {
 				return
 			}
 
-			if response.Status != 200 {
-				c.JSON(500, gin.H{
-					"error":   "Something went wrong",
-					"success": false,
-				})
-				return
-			}
-
-			if err := configs.DB.Model(&models.Transaction{}).Count(&total).Error; err != nil {
+			if err := configs.DB.Select("ukheshe_wallet_id, service_id, amount, currency, created_at, rebate").Where("ukheshe_wallet_id = ?", int(wallet["walletId"].(float64))).Order("created_at desc").Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
 				c.JSON(500, gin.H{
 					"error":   err.Error(),
 					"success": false,
 				})
 				return
+			}
+
+			for _, transaction := range transaction_history {
+				// delete transaction["id"]
+				var Service models.VASService
+				if err := configs.DB.Model(&models.VASService{}).Select("id, name").Where("id = ?", transaction.ServiceId).First(&Service).Error; err != nil {
+					c.JSON(500, gin.H{
+						"error":   err.Error(),
+						"success": false,
+					})
+					return
+				}
+				transactions = append(transactions, TransactionHistory{
+					Amount:      transaction.Amount,
+					Rebate:      transaction.Rebate,
+					Currency:    transaction.Currency,
+					CreatedAt:   time.Unix(transaction.CreatedAt, 0),
+					Description: transaction.Description,
+					Service:     Service.Name,
+				})
+
 			}
 
 			c.JSON(200, gin.H{
-				"transaction_history": transaction_history,
+				"transaction_history": transactions,
 				"metadata": map[string]interface{}{
 					"limit": limitInt,
 					"page":  pageInt,

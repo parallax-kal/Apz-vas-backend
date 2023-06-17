@@ -5,6 +5,7 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"time"
 
@@ -50,7 +51,7 @@ func GetMobileBundleProductsByCategory() gin.HandlerFunc {
 			"category": []string{category},
 		}
 
-		var response, err = configs.BlueLabelCleint.Get("/v2/trade/mobile/bundle/products", query)
+		var response, err = configs.BlueLabelCleint.Get("/mobile/bundle/products", query)
 
 		if err != nil {
 			c.JSON(500, gin.H{
@@ -65,6 +66,7 @@ func GetMobileBundleProductsByCategory() gin.HandlerFunc {
 		json.Unmarshal(response.Data, &responseBody)
 
 		if response.Status != 200 {
+			fmt.Println(responseBody)
 			c.JSON(response.Status, responseBody)
 			return
 		}
@@ -80,12 +82,9 @@ func GetMobileBundleProductsByCategory() gin.HandlerFunc {
 
 func BuyMobileBundle() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var mobileNumber = c.PostForm("mobile_number")
-		var vendorId = c.PostForm("vendor_id")
-		var deviceId = c.PostForm("device_id")
-		var productId = c.PostForm("product_id")
-
-		var organization = c.MustGet("user_data").(*models.User)
+		var requestBody = c.MustGet("request_body").(map[string]interface{})
+		mobileNumber, vendorId, deviceId, productId := requestBody["mobile_number"].(string), requestBody["vendor_id"].(string), requestBody["device_id"].(string), requestBody["product_id"].(string)
+		var organization = c.MustGet("organization_data").(models.Organization)
 
 		if mobileNumber == "" {
 			c.JSON(400, gin.H{
@@ -134,7 +133,7 @@ func BuyMobileBundle() gin.HandlerFunc {
 			},
 		}
 
-		var response, err = configs.BlueLabelCleint.Post("/v2/trade/mobile/bundle/sales", payload)
+		var response, err = configs.BlueLabelCleint.Post("/mobile/bundle/sales", payload)
 
 		if err != nil {
 			c.JSON(500, err)
@@ -146,9 +145,14 @@ func BuyMobileBundle() gin.HandlerFunc {
 		json.Unmarshal(response.Data, &responseBody)
 
 		if response.Status != 201 {
-			c.JSON(response.Status, responseBody)
+			c.JSON(response.Status, gin.H{
+				"success": false,
+				"error":   responseBody["message"],
+			})
 			return
 		}
+
+		utils.PayForService(c)
 
 		c.JSON(200, gin.H{
 			"success": true,

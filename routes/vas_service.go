@@ -20,7 +20,7 @@ func InitializeVasServiceRoutes(router *gin.RouterGroup) {
 		middlewares.NickNameService(),
 		middlewares.ServiceProviderMiddleware(),
 		middlewares.WalletMiddleware(),
-		middlewares.PayForServiceMiddleware(),
+		middlewares.CheckIfPaymentCanBeDone(),
 		mobile.BuyAirtime(),
 	)
 
@@ -43,7 +43,7 @@ func InitializeVasServiceRoutes(router *gin.RouterGroup) {
 		middlewares.NickNameService(),
 		middlewares.ServiceProviderMiddleware(),
 		middlewares.WalletMiddleware(),
-		middlewares.PayForServiceMiddleware(),
+		middlewares.CheckIfPaymentCanBeDone(),
 		mobile.BuyMobileBundle(),
 	)
 

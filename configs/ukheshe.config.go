@@ -52,7 +52,7 @@ func authenticate() {
 		}
 
 		if resp.Status != 200 {
-			fmt.Println("Failed to renew the token")
+			fmt.Println("Unable to renew the token.")
 			continue
 		}
 		// Parse the response and update the stored token
@@ -69,11 +69,6 @@ func authenticate() {
 		expires, _ := time.Parse(time.RFC3339, expiresStr)
 
 		// Convert the expiration time to GMT
-		location, err := time.LoadLocation("GMT")
-		if err != nil {
-			continue
-		}
-		expires = expires.In(location)
 
 		tokenExpires = expires
 		tokenMutex.Unlock()
@@ -113,7 +108,7 @@ func MakeAuthenticatedRequest(add_tenant_id bool) *axios.Instance {
 
 	if add_tenant_id {
 		ukheshe_configs = &axios.InstanceConfig{
-			BaseURL: ukheshe_link + "/eclipse-conductor/rest/v1" + "/tenants/" + ukheshe_tenat_id,
+			BaseURL: ukheshe_link + "/eclipse-conductor/rest/v1/tenants/" + ukheshe_tenat_id,
 			Headers: ukheshe_headers,
 		}
 	} else {

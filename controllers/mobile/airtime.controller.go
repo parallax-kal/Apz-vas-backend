@@ -5,8 +5,8 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"encoding/json"
-	"time"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 func GetAirtimeVendors() gin.HandlerFunc {
@@ -30,8 +30,8 @@ func GetAirtimeVendors() gin.HandlerFunc {
 
 		c.JSON(200, gin.H{
 			"airtime_vendors": responseBody,
-			"message": "Airtime Vendors Retrieved successfully",
-			"success": true,
+			"message":         "Airtime Vendors Retrieved successfully",
+			"success":         true,
 		})
 	}
 }
@@ -41,38 +41,18 @@ func BuyAirtime() gin.HandlerFunc {
 
 		// get mobile number, vendorId(cellc, mtn, telkom, vodacom), amount, deviceId, vendorId(used to identity a vendor in the blue label api) from the body
 
-		var mobileNumber = c.PostForm("mobile_number")
-		var vendorId = c.PostForm("vendor_id")
-		var amount = c.PostForm("amount")
-		var deviceId = c.PostForm("device_id")
+		var requestBody = c.MustGet("request_body").(map[string]interface{})
 
+		mobileNumber, amount, deviceId, vendorId := requestBody["mobile_number"].(string), requestBody["amount"].(float64), requestBody["device_id"].(string), requestBody["vendor_id"].(string)
 		// get the organization id from the context
-		var organization = c.MustGet("user_data").(*models.User)
+		var organization = c.MustGet("organization_data").(models.Organization)
 
 		// get unique identifier for the request from client(this is not in the form submitted)
 
 		if mobileNumber == "" {
 			c.JSON(400, gin.H{
 				"success": false,
-				"message": "Mobile number is required",
-			})
-			return
-		}
-
-		if amount == "" {
-			c.JSON(400, gin.H{
-				"success": false,
-				"message": "Amount is required",
-			})
-			return
-		}
-
-		var amountInt = utils.ConvertStringToInt(amount)
-
-		if amountInt <= 0 {
-			c.JSON(400, gin.H{
-				"success": false,
-				"message": "Invalid amount",
+				"error":   "Mobile number is required",
 			})
 			return
 		}
@@ -80,7 +60,7 @@ func BuyAirtime() gin.HandlerFunc {
 		if vendorId == "" {
 			c.JSON(400, gin.H{
 				"success": false,
-				"message": "Vendor ID is required",
+				"error":   "Vendor ID is required",
 			})
 			return
 		}
@@ -88,7 +68,7 @@ func BuyAirtime() gin.HandlerFunc {
 		if deviceId == "" {
 			c.JSON(400, gin.H{
 				"success": false,
-				"message": "Device ID is required",
+				"error":   "Device ID is required",
 			})
 			return
 		}
@@ -100,7 +80,7 @@ func BuyAirtime() gin.HandlerFunc {
 			"requestId":    ipAddress,
 			"vendorId":     vendorId,
 			"mobileNumber": mobileNumber,
-			"amount":       amountInt,
+			"amount":       amount,
 			"vendMetaData": map[string]interface{}{
 				"transactionRequestDateTime": transactionTime,
 				// "transactionReference":       "0123456789",
@@ -113,7 +93,10 @@ func BuyAirtime() gin.HandlerFunc {
 		var response, err = configs.BlueLabelCleint.Post("/mobile/airtime/sales", payload)
 
 		if err != nil {
-			c.JSON(500, err)
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
 			return
 		}
 
@@ -122,14 +105,23 @@ func BuyAirtime() gin.HandlerFunc {
 		json.Unmarshal(response.Data, &responseBody)
 
 		if response.Status != 201 {
-			c.JSON(response.Status, responseBody)
+			c.JSON(response.Status, gin.H{
+				"success": false,
+				"error":   responseBody["message"],
+			})
 			return
 		}
-
+		paymentError := utils.PayForService(c)
+		if paymentError != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   paymentError.Error(),
+			})
+			return
+		}
 		c.JSON(200, gin.H{
 			"success": true,
 			"message": "Mobile Airtime bought successfully",
-			"data":    responseBody,
 		})
 
 	}

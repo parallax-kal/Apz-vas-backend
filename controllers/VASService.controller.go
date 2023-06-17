@@ -4,7 +4,9 @@ import (
 	"apz-vas/configs"
 	"apz-vas/models"
 	"apz-vas/utils"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -161,7 +163,6 @@ func GetAdminVASServices() gin.HandlerFunc {
 					service_provider.Name,
 				})
 			} else {
-
 				vas_services_providers = append(vas_services_providers, VasServiceProvider{
 					vasService,
 					service_provider.Name,
@@ -174,9 +175,9 @@ func GetAdminVASServices() gin.HandlerFunc {
 			"success":      true,
 			"vas_services": vas_services_providers,
 			"metadata": map[string]interface{}{
-				"total":           total,
-				"page":            pageInt,
-				"limit":           limitInt,
+				"total": total,
+				"page":  pageInt,
+				"limit": limitInt,
 			},
 		})
 
@@ -392,6 +393,14 @@ func OperationOnService() gin.HandlerFunc {
 
 }
 
+type VasServiceTransaction struct {
+	Amount      float64                `json:"amount"`
+	Rebate      float64                `json:"rebate"`
+	Currency    string                 `json:"currency"`
+	ServiceData map[string]interface{} `json:"service_data"`
+	CreatedAt   time.Time              `json:"created_at"`
+}
+
 func GetVasServiceTransactionHistory() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user = c.MustGet("user_data").(models.User)
@@ -437,6 +446,7 @@ func GetVasServiceTransactionHistory() gin.HandlerFunc {
 		var total int64
 
 		var vas_service_transactions []models.Transaction
+		var vas_service_transactions_history []VasServiceTransaction
 
 		// check where serviceId is equal to the serviceId
 		if user.Role == "Organization" {
@@ -451,20 +461,42 @@ func GetVasServiceTransactionHistory() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			if err := configs.DB.Model(&models.Transaction{}).Where("service_id = ? AND external_id = ?", service.ID, organization.ID).Count(&total).Error; err != nil {
+
+			if err := configs.DB.Model(&models.Transaction{}).Select("service_id, external_id").Where("service_id = ? AND external_id = ?", service.ID, organization.ID).Count(&total).Error; err != nil {
 				c.JSON(500, gin.H{
 					"error":   err.Error(),
 					"success": false,
 				})
 				return
 			}
-			if err := configs.DB.Model(&models.Transaction{}).Where("service_id = ? AND external_id = ?", service.ID, organization.ID).Offset(offset).Limit(limitInt).Find(&vas_service_transactions).Error; err != nil {
+			if err := configs.DB.Model(&models.Transaction{}).Select("service_id, external_id, service_data, rebate, amount, currency, created_at").Where("service_id = ? AND external_id = ?", service.ID, organization.ID).Order("created_at desc").Offset(offset).Limit(limitInt).Find(&vas_service_transactions).Error; err != nil {
 				c.JSON(500, gin.H{
 					"error":   err.Error(),
 					"success": false,
 				})
 				return
 			}
+
+			for _, transaction := range vas_service_transactions {
+				var service_data map[string]interface{}
+				if err := json.Unmarshal([]byte(transaction.ServiceData), &service_data); err != nil {
+					c.JSON(500, gin.H{
+						"error":   err.Error(),
+						"success": false,
+					})
+					return
+				}
+				delete(service_data, "amount")
+				delete(service_data, "device_id")
+				vas_service_transactions_history = append(vas_service_transactions_history, VasServiceTransaction{
+					Amount:      transaction.Amount,
+					Rebate:      transaction.Rebate,
+					Currency:    transaction.Currency,
+					ServiceData: service_data,
+					CreatedAt:   time.Unix(transaction.CreatedAt, 0),
+				})
+			}
+
 		} else {
 			if err := configs.DB.Model(&models.Transaction{}).Where("service_id = ?", service.ID).Count(&total).Error; err != nil {
 				c.JSON(500, gin.H{
@@ -485,7 +517,7 @@ func GetVasServiceTransactionHistory() gin.HandlerFunc {
 		c.JSON(200, gin.H{
 			"message":                  "VAS Service Transaction History retrieved successfully",
 			"success":                  true,
-			"vas_service_transactions": vas_service_transactions,
+			"vas_service_transactions": vas_service_transactions_history,
 			"metadata": map[string]interface{}{
 				"total": total,
 				"page":  pageInt,

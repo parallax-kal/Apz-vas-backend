@@ -28,3 +28,7 @@ func ConvertStringToUUID(str string) uuid.UUID {
 	}
 	return uid
 }
+
+func ConvertUUidToString(uuid uuid.UUID) string {
+	return "";
+}
