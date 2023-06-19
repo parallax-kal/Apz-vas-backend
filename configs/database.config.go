@@ -89,6 +89,7 @@ func connectDb() *gorm.DB {
 
 	fmt.Println("Connected to database successfully")
 	migrate(db)
+	seed(db)
 	return db
 }
 
