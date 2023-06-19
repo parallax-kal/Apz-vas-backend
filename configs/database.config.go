@@ -45,8 +45,6 @@ func connectDb() *gorm.DB {
 	DBNAME := os.Getenv("DBNAME")
 
 	fmt.Println("Connecting to database...")
-	// drop database
-	// dsn := "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
 	dsn := "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " dbname=" + DBNAME + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
@@ -86,7 +84,12 @@ func connectDb() *gorm.DB {
 			panic(err)
 		}
 	}
-
+	fmt.Println("Enabling uuid-ossp extension...")
+	err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Enabled uuid-ossp extension successfully")
 	fmt.Println("Connected to database successfully")
 	migrate(db)
 	seed(db)
