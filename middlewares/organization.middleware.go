@@ -3,6 +3,8 @@ package middlewares
 import (
 	"apz-vas/configs"
 	"apz-vas/models"
+	"apz-vas/utils"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,6 +22,43 @@ func OrganizationMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		// https://eclipse-java-sandbox.ukheshe.rocks/eclipse-conductor/rest/v1/tenants/{tenantId}/organisations/{organisationId}
+
+		Ukheshe_Client := configs.MakeAuthenticatedRequest(true)
+
+		response, err := Ukheshe_Client.Get("/organisations/" + utils.ConvertIntToString(int(organization.Ukheshe_Id)))
+
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error":   "Something Went Wrong",
+				"success": false,
+			})
+			c.Abort()
+			return
+		}
+
+		if response.Status != 200 {
+			c.JSON(500, gin.H{
+				"error":   "Something Went Wrong",
+				"success": false,
+			})
+			c.Abort()
+			return
+		}
+
+		var response_data map[string]interface{}
+
+		if err := json.Unmarshal(response.Data, &response_data); err != nil {
+			c.JSON(500, gin.H{
+				"error":   "Something Went Wrong",
+				"success": false,
+			})
+			c.Abort()
+			return
+		}
+
+		c.Set("organization_version", response_data["version"])
 
 		c.Set("organization_data", organization)
 

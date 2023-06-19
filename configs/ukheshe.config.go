@@ -69,7 +69,6 @@ func authenticate() {
 		expires, _ := time.Parse(time.RFC3339, expiresStr)
 
 		// Convert the expiration time to GMT
-
 		tokenExpires = expires
 		tokenMutex.Unlock()
 		fmt.Println("Authenticated.")

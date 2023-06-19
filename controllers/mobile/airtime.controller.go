@@ -39,16 +39,12 @@ func GetAirtimeVendors() gin.HandlerFunc {
 func BuyAirtime() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// get mobile number, vendorId(cellc, mtn, telkom, vodacom), amount, deviceId, vendorId(used to identity a vendor in the blue label api) from the body
 
 		var requestBody = c.MustGet("request_body").(map[string]interface{})
 
 		mobileNumber, amount, deviceId, vendorId := requestBody["mobile_number"].(string), requestBody["amount"].(float64), requestBody["device_id"].(string), requestBody["vendor_id"].(string)
-		// get the organization id from the context
 		var organization = c.MustGet("organization_data").(models.Organization)
-
-		// get unique identifier for the request from client(this is not in the form submitted)
-
+		
 		if mobileNumber == "" {
 			c.JSON(400, gin.H{
 				"success": false,

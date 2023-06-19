@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"os"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func ConvertGoogleIdToPassword(googleId string) string {
@@ -38,4 +40,13 @@ func StructToMap(obj interface{}) map[string]interface{} {
 	json.Unmarshal(inrec, &data)
 	return data
 
+}
+
+
+func GetFullUrlWithProtocol(c *gin.Context) string {
+	protocol := "http"
+	if c.Request.TLS != nil {
+		protocol = "https"
+	}
+	return protocol + "://" + c.Request.Host + c.Request.RequestURI
 }

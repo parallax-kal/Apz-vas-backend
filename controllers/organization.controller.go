@@ -10,21 +10,11 @@ import (
 
 func GetYourOrganizationData() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var user = c.MustGet("user_data").(models.User)
-
-		var organization models.Organization
-
-		if err := configs.DB.Where("user_id = ?", user.ID).First(&organization).Error; err != nil {
-			c.JSON(500, gin.H{
-				"success": false,
-				"error":   err.Error(),
-			})
-			return
-		}
-
+		var organization = c.MustGet("organization_data").(models.Organization)
 		c.JSON(200, gin.H{
-			"success": true,
-			"data":    organization,
+			"success":      true,
+			"message":      "Organization data fetched successfully",
+			"organization": organization,
 		})
 	}
 }
@@ -161,7 +151,13 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 			return
 		}
 
-		if err := configs.DB.Model(&models.Organization{}).Where("id = ?", organization.ID).Update("ukheshe_id", responseBody["organisationId"]).Error; err != nil {
+		var version = responseBody["version"].(float64)
+		var organizationId = responseBody["organisationId"].(float64)
+
+		if err := configs.DB.Model(&models.Organization{}).Where("id = ?", organization.ID).Updates(map[string]interface{}{
+			"version":    version,
+			"ukheshe_id": organizationId,
+		}).Error; err != nil {
 			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
 			c.JSON(500, gin.H{
 				"success": false,
@@ -230,7 +226,147 @@ func SignupOrganization() gin.HandlerFunc {
 
 func UpdateOrganization() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var organization = c.MustGet("organization_data").(models.Organization)
+		var request_body = c.MustGet("request_body").(map[string]interface{})
 
+		requestBodyBytes, errr := json.Marshal(request_body)
+
+		if errr != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   errr.Error(),
+			})
+			return
+		}
+
+		var org models.Organization
+
+		if errf := json.Unmarshal(requestBodyBytes, &org); errf != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   errf.Error(),
+			})
+			return
+		}
+
+		var ukheshe_client = configs.MakeAuthenticatedRequest(true)
+
+		var organizationBody = make(map[string]interface{})
+
+		organizationBody["name"] = organization.Company_Name
+		organizationBody["phone1"] = organization.Phone_Number1
+		if organization.Phone_Number2 != "" {
+			organizationBody["phone2"] = organization.Phone_Number2
+		}
+		if organization.Tax_Number != "" {
+
+			organizationBody["taxNumber"] = organization.Tax_Number
+		}
+		if organization.Trading_Name != "" {
+
+			organizationBody["tradingName"] = organization.Trading_Name
+		}
+		if organization.Company_Number != "" {
+			organizationBody["companyNumber"] = organization.Company_Number
+		}
+		if organization.Bank_Name != "" {
+			organizationBody["bankName"] = organization.Bank_Name
+		}
+		organizationBody["accountNumber"] = organization.Account_Number
+		organizationBody["externalUniqueId"] = organization.ID
+
+		if organization.Bank_Name != "" && organization.Account_Number != "" {
+			organizationBody["bankDetails"] = []map[string]interface{}{
+				{
+					"att": "bankName",
+					"val": organization.Bank_Name,
+				},
+				{
+					"att": "accountNumber",
+					"val": organization.Account_Number,
+				},
+			}
+		}
+
+		if organization.Organization_Type != "" {
+			organizationBody["type"] = organization.Organization_Type
+		}
+
+		if organization.Industrial_Classification != "" {
+			organizationBody["industrialClassification"] = organization.Industrial_Classification
+		}
+
+		if organization.Industrial_Sector != "" {
+			organizationBody["industrialSector"] = organization.Industrial_Sector
+		}
+
+		if organization.Registration_Date != "" {
+			organizationBody["businessRegistrationDate"] = organization.Registration_Date // format("20230610")
+
+		}
+		if organization.BusinessType != "" {
+			organizationBody["businessType"] = organization.BusinessType
+		}
+
+		organizationBody["version"] = c.MustGet("organization_version").(float64)
+
+		var response, ukesheResponseError = ukheshe_client.Put("/organisations/"+utils.ConvertIntToString(int(organization.Ukheshe_Id)), organizationBody)
+
+		if ukesheResponseError != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   ukesheResponseError.Error(),
+			})
+			return
+		}
+
+		if response.Status != 200 {
+			var responseBody []map[string]interface{}
+			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+				c.JSON(500, gin.H{
+					"success": false,
+					"error":   err.Error(),
+				})
+				return
+			}
+			c.JSON(response.Status, gin.H{
+				"success": false,
+				"error":   responseBody[0]["description"],
+			})
+			return
+		}
+
+		var responseBody map[string]interface{}
+
+		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		if err := configs.DB.Model(&models.Organization{}).Where("id = ?", organization.ID).Update("ukheshe_id", responseBody["organisationId"]).Error; err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		if err := configs.DB.Model(&models.Organization{}).Where("id = ?", organization.ID).Updates(org).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"success":      true,
+			"organization": organization,
+			"message":      "Organization updated successfully",
+		})
 	}
 }
 

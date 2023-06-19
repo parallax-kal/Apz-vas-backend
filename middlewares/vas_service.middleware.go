@@ -113,7 +113,17 @@ func NickNameService() gin.HandlerFunc {
 			return
 		}
 
+		c.Set("service_data", Service)
+
+		c.Next()
+
+	}
+}
+
+func CheckSubscription() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		var organization = c.MustGet("organization_data").(models.Organization)
+		var Service = c.MustGet("service_data").(models.VASService)
 		var subscribedService models.SubscribedServices
 
 		if err := configs.DB.Where("organization_id = ? AND service_id = ?", organization.ID, Service.ID).First(&subscribedService).Error; err != nil {
@@ -125,9 +135,6 @@ func NickNameService() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("service_data", Service)
-
 		c.Next()
-
 	}
 }

@@ -18,11 +18,12 @@ type Organization struct {
 	Tax_Number                string    `gorm:"<-;unique;not null;type:varchar(255)" json:"tax_number"`
 	Bank_Name                 string    `gorm:"<-;type:varchar(255)" json:"bank_name"`
 	Account_Number            string    `gorm:"<-;unique;type:varchar(255)" json:"account_number"`
-	Ukheshe_Id                 uint32    `gorm:"<-;unique;not null;type:int" json:"ukheshe_id"`
+	Ukheshe_Id                uint32    `gorm:"<-;unique;not null;type:int" json:"ukheshe_id"`
 	Registration_Date         string    `gorm:"<-;type:varchar(255)" json:"registration_date"`
 	Organization_Type         string    `gorm:"<-;type:varchar(255)" json:"organization_type"`
 	BusinessType              string    `gorm:"<-;type:varchar(255)" json:"businesstype"`
 	Status                    string    `gorm:"<-;type:varchar(255);default:Active" json:"status"`
+	Version                   int       `gorm:"<-;type:float" json:"version"`
 	UpdatedAt                 int64     `gorm:"autoUpdateTime" json:"updated_at"`
 	CreatedAt                 int64     `gorm:"autoCreateTime" json:"created_at"`
 }

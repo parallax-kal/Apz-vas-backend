@@ -3,11 +3,10 @@ package main
 import (
 	"apz-vas/configs"
 	"apz-vas/routes"
-	"time"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
+	"time"
 )
 
 func main() {

@@ -49,4 +49,28 @@ func InitializeWalletRoutes(router *gin.RouterGroup) {
 		controllers.WithDrawFromWallet(),
 	)
 
+	router.PUT("/update-wallet",
+		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		middlewares.WalletMiddleware(),
+		controllers.UpdateWallet(),
+	)
+
+	router.GET("/get-withdrawal-fees",
+		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		middlewares.WalletMiddleware(),
+		controllers.GetWithdrawalFees(),
+	)
+
+	router.POST("/topup-callabck",
+		middlewares.CheckUkhesheClient(),
+		controllers.UkhesheTopupCallBack(),
+	)
+
+	router.POST("/withdraw-callabck",
+		middlewares.CheckUkhesheClient(),
+		controllers.UkhesheWithdrawCallBack(),
+	)
+
 }

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/vicanso/go-axios"
 )
@@ -306,22 +305,38 @@ func CreateUser(user models.User) (*models.User, error) {
 
 }
 
-type changePassword struct {
-	OldPassword string `json:"old_password"`
-	NewPassword string `json:"new_password"`
-	ChangePass  bool   `json:"change_pass"`
+
+
+func UpdatePassword() gin.HandlerFunc {
+	return func(c*gin.Context) {
+
+	}
 }
 
 func AccountSettings() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var user models.User
-		if err := c.ShouldBindJSON(&user); err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
+
+		var request_body = c.MustGet("request_body").(map[string]interface{})
+		requestBodyBytes, errr := json.Marshal(request_body)
+		var user_data = c.MustGet("user_data").(models.User)
+		if errr != nil {
+			c.JSON(500, gin.H{
 				"success": false,
+				"error":   errr.Error(),
 			})
 			return
 		}
+
+		var user models.User
+
+		if errf := json.Unmarshal(requestBodyBytes, &user); errf != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   errf.Error(),
+			})
+			return
+		}
+
 		if user.Name == "" {
 			c.JSON(400, gin.H{
 				"error":   "Name is required.",
@@ -354,37 +369,8 @@ func AccountSettings() gin.HandlerFunc {
 			return
 		}
 
-		var passwordBody changePassword
-		if err := c.ShouldBindJSON(&passwordBody); err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
-		if passwordBody.ChangePass {
-			// VALIDATE PASSWORD
-			passwordError := utils.ValidatePassword(passwordBody.NewPassword)
-			if passwordError != nil {
-				c.JSON(400, gin.H{
-					"error":   passwordError.Error(),
-					"success": false,
-				})
-				return
-			}
-			// Hash the password
-			hashedPassword, err := utils.HashPassword(passwordBody.NewPassword)
-			if err != nil {
-				c.JSON(400, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-			user.Password = hashedPassword
-		}
-
-		if err := configs.DB.Model(&user).Updates(user).Error; err != nil {
+		
+		if err := configs.DB.Model(&models.User{}).Where("id = ?", user_data.ID).Updates(user).Error; err != nil {
 			c.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,

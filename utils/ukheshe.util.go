@@ -23,7 +23,6 @@ func PayForService(c *gin.Context) error {
 		return err
 	}
 	if err := json.Unmarshal(requestBodyBytes, &transfer); err != nil {
-
 		return err
 	}
 
@@ -40,8 +39,8 @@ func PayForService(c *gin.Context) error {
 	transfer.Rebate = service.Rebate
 	transfer.Currency = wallet["currency"].(string)
 	transfer.ExternalId = organization.ID
-	transfer.OtherWalletId = uint32(ConvertStringToInt(os.Getenv("APZ_VAS_WALLET_ID")))
-	transfer.UkhesheWalletId = wallet["walletId"].(float64)
+	transfer.ApzvasWalletId = uint32(ConvertStringToInt(os.Getenv("APZ_VAS_WALLET_ID")))
+	transfer.OrganizationWalletId = wallet["walletId"].(float64)
 	transfer.Description = "Payment for " + service.Name
 	transfer.WalletId = ConvertStringToUUID(wallet["externalUniqueId"].(string))
 	fmt.Println(transfer.Amount)
@@ -55,8 +54,8 @@ func PayForService(c *gin.Context) error {
 	transferBody["location"] = transfer.Location
 	transferBody["replyPolicy"] = "WHEN_COMPLETE"
 	transferBody["onlyCheck"] = false
-	transferBody["fromWalletId"] = transfer.UkhesheWalletId
-	transferBody["toWalletId"] = transfer.OtherWalletId
+	transferBody["fromWalletId"] = transfer.OrganizationWalletId
+	transferBody["toWalletId"] = transfer.ApzvasWalletId
 	transferBody["description"] = transfer.Description
 	transferBody["externalId"] = transfer.ExternalId
 	transferBody["externalUniqueId"] = transfer.ID

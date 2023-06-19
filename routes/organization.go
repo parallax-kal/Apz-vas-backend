@@ -22,15 +22,24 @@ func InitializeOrganizationRoutes(router *gin.RouterGroup) {
 
 	router.GET("/get-your-organization-data",
 		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
 		controllers.GetYourOrganizationData(),
 	)
 
 	router.DELETE("/delete-organization",
+		middlewares.AuthMiddleware(),
 		middlewares.AdminMiddleware(),
 		controllers.DeleteOrganization(),
 	)
 	router.PUT("/update-organization",
+		middlewares.AuthMiddleware(),
 		middlewares.AdminMiddleware(),
+		controllers.UpdateOrganization(),
+	)
+	router.PUT("/settings",
+		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		middlewares.PasswordChecker(),
 		controllers.UpdateOrganization(),
 	)
 	router.GET("/get-organizations",
