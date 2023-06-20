@@ -12,7 +12,6 @@ type Wallet struct {
 	WalletTypeID   uint32    `gorm:"<-;not null;type:int" json:"wallet_type_id"`
 	Ukheshe_Id     uint32    `gorm:"<-;unique;not null;type:int" json:"ukheshe_id"`
 	Description    string    `gorm:"<-;not null;type:varchar(255)" json:"description"`
-	Status         string    `gorm:"<-;not null;type:varchar(255);default:Active" json:"status"`
 	UpdatedAt      int64     `gorm:"autoUpdateTime" json:"updated_at"`
 	CreatedAt      int64     `gorm:"autoCreateTime" json:"created_at"`
 }

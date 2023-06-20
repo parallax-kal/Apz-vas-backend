@@ -35,7 +35,7 @@ func OrganizationAPIMiddleware() gin.HandlerFunc {
 
 		if err != nil {
 			c.JSON(500, gin.H{
-				"error":   "Something Went Wrong",
+				"error":   "An error occurred. Please try again or Contact admin",
 				"success": false,
 			})
 			c.Abort()
@@ -44,7 +44,7 @@ func OrganizationAPIMiddleware() gin.HandlerFunc {
 
 		if response.Status != 200 {
 			c.JSON(500, gin.H{
-				"error":   "Something Went Wrong",
+				"error":   "An error occurred. Please try again or Contact Admin.",
 				"success": false,
 			})
 			c.Abort()

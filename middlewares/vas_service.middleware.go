@@ -36,14 +36,7 @@ func VASServiceMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if Service.Status != "Active" {
-			c.JSON(200, gin.H{
-				"error":   "Service is not active. Contact Admin for a reason!",
-				"success": true,
-			})
-			c.Abort()
-			return
-		}
+		
 		c.Set("service_data", Service)
 
 		c.Next()

@@ -57,7 +57,7 @@ func CheckIfPaymentCanBeDone() gin.HandlerFunc {
 		transferBody["externalUniqueId"] = uuid.New()
 		transferBody["amount"] = (requestBodyAmount * service.Rebate / 100) + requestBodyAmount
 		transferBody["check"] = "BOTH"
-		
+
 		var UkhesheClient = configs.MakeAuthenticatedRequest(true)
 
 		var response, ukesheResponseError = UkhesheClient.Post("/wallets/transfers", transferBody)
@@ -114,7 +114,7 @@ func WalletMiddleware() gin.HandlerFunc {
 		if err != nil {
 			fmt.Println(err.Error())
 			c.JSON(500, gin.H{
-				"error":   "Something Went Wrong",
+				"error":   "An error occured. Please try again or contact admin.",
 				"success": false,
 			})
 			c.Abort()
@@ -122,8 +122,8 @@ func WalletMiddleware() gin.HandlerFunc {
 		}
 
 		if response.Status != 200 {
-			c.JSON(404, gin.H{
-				"error":   "Wallet Not Found",
+			c.JSON(500, gin.H{
+				"error":   "An error occured. Please try again or contact admin.",
 				"success": true,
 			})
 			c.Abort()
@@ -135,7 +135,7 @@ func WalletMiddleware() gin.HandlerFunc {
 		json.Unmarshal((response.Data), &wallet_body)
 
 		if wallet_body["status"].(string) != "ACTIVE" {
-			c.JSON(200, gin.H{
+			c.JSON(403, gin.H{
 				"error":   "Your Wallet is not Active",
 				"success": true,
 			})

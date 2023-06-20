@@ -22,6 +22,12 @@ func InitializeWalletRoutes(router *gin.RouterGroup) {
 		controllers.GetWallet(),
 	)
 
+	router.GET("/get-wallet-balances",
+		middlewares.OrganizationAPIMiddleware(),
+		middlewares.WalletMiddleware(),
+		controllers.GetWalletBalances(),
+	)
+
 	router.POST("/create-wallet",
 		middlewares.AuthMiddleware(),
 		middlewares.OrganizationMiddleware(),

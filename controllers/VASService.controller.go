@@ -14,18 +14,11 @@ import (
 func GetVasServiceData() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var service = c.MustGet("service_data").(models.VASService)
-		var vas_service models.VASService
-		if err := configs.DB.Where("id = ?", service.ID).First(&vas_service).Error; err != nil {
-			c.JSON(404, gin.H{
-				"error":   "VAS Service not found",
-				"success": false,
-			})
-			return
-		}
+
 		c.JSON(200, gin.H{
 			"success":     true,
 			"message":     "VAS Service retrieved successfully",
-			"vas_service": vas_service,
+			"vas_service": service,
 		})
 
 	}
@@ -229,7 +222,7 @@ func GetOrganizationVASServices() gin.HandlerFunc {
 
 		if err := configs.DB.Model(&models.VASService{}).Count(&total).Error; err != nil {
 			c.JSON(500, gin.H{
-				"error":   err.Error(),
+				"error":   "An error occurred. Please try again or contact admin",
 				"success": false,
 			})
 			return
@@ -237,7 +230,7 @@ func GetOrganizationVASServices() gin.HandlerFunc {
 
 		if err := configs.DB.Select("id, name, description, provider_id, rebate, status").Offset(offset).Limit(limitInt).Find(&vas_services).Error; err != nil {
 			c.JSON(500, gin.H{
-				"error":   err.Error(),
+				"error":   "An error occurred. Please try again.",
 				"success": false,
 			})
 			return
@@ -249,7 +242,6 @@ func GetOrganizationVASServices() gin.HandlerFunc {
 
 			var subscribed_service models.SubscribedServices
 			if err := configs.DB.Where("service_id = ? AND organization_id = ?", vasService.ID, organization.ID).First(&subscribed_service).Error; err != nil {
-				fmt.Println(err.Error())
 				VasServiceSubscribers = append(VasServiceSubscribers, VasServiceSubscribed{
 					vasService,
 					false,
@@ -265,15 +257,15 @@ func GetOrganizationVASServices() gin.HandlerFunc {
 
 		if err := configs.DB.Model(&models.SubscribedServices{}).Where("organization_id = ?", organization.ID).Count(&totalSubscribed).Error; err != nil {
 			c.JSON(500, gin.H{
-				"error":   err.Error(),
+				"error":   "An error occurred. Please try again or contact admin",
 				"success": false,
 			})
 			return
 		}
 
 		c.JSON(200, gin.H{
-			"message":      "VAS Services retrieved successfully",
 			"success":      true,
+			"message":      "VAS Services retrieved successfully",
 			"vas_services": VasServiceSubscribers,
 			"metadata": map[string]interface{}{
 				"total":           total,

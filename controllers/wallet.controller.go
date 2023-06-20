@@ -6,10 +6,11 @@ import (
 	"apz-vas/utils"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"net/url"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func GetWalletTypes() gin.HandlerFunc {
@@ -677,7 +678,6 @@ func saveWithdrawData(withdrawData map[string]interface{}) error {
 		return err
 	}
 
-
 	withdraw.Status = withdrawData["status"].(string)
 	// withdraw.Amount = withdrawData["amount"].(float64)
 	// withdraw.Currency = withdrawData["currency"].(string)
@@ -706,7 +706,6 @@ func saveWithdrawData(withdrawData map[string]interface{}) error {
 		createdAt = createdAt.In(location)
 		withdraw.CreatedAt = createdAt.Unix()
 	}
-
 
 	// if withdrawData["extraInfo"] != nil {
 	// 	var extraInfo = withdrawData["extraInfo"].(map[string]interface{})
@@ -798,6 +797,21 @@ type TransactionHistory struct {
 	CreatedAt   time.Time `json:"created_at"`
 	Description string    `json:"description"`
 	Service     string    `json:"service"`
+}
+
+func GetWalletBalances() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var wallet_body = c.MustGet("wallet_data").(map[string]interface{})
+		var availableBalance = wallet_body["availableBalance"].(float64)
+		var currentBalance = wallet_body["currentBalance"].(float64)
+
+		c.JSON(200, gin.H{
+			"success":           true,
+			"message":           "Wallet Balance retrieved successfully",
+			"available_balance": availableBalance,
+			"current_balance":   currentBalance,
+		})
+	}
 }
 
 func GetTransactionHistory() gin.HandlerFunc {

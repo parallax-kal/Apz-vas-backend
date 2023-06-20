@@ -402,6 +402,47 @@ func CreateUser(user models.User) (*models.User, error) {
 
 func UpdatePassword() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var request_body = c.MustGet("request_body").(map[string]interface{})
+		if request_body["newPassword"] == nil {
+			c.JSON(400, gin.H{
+				"error":   "New Password is required.",
+				"success": false,
+			})
+			return
+		}
+		var newPassword = request_body["newPassword"].(string)
+		var newNewpassword, err = utils.HashPassword(newPassword)
+
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		var user_data = c.MustGet("user_data").(models.User)
+
+		var passwords = strings.Split(user_data.Passwords, ",")
+		passwords[0] = newNewpassword
+
+		var newPass = strings.Join(passwords, ",")
+
+		var user models.User
+		user.Passwords = newPass
+
+		if err := configs.DB.Model(&models.User{}).Where("id = ? ", user_data.ID).Updates(&user).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"message": "Password updated successfully",
+			"success": true,
+		})
 
 	}
 }
