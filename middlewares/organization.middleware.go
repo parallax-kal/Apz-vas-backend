@@ -16,7 +16,7 @@ func OrganizationMiddleware() gin.HandlerFunc {
 
 		if err := configs.DB.Where("user_id = ?", user.ID).First(&organization).Error; err != nil {
 			c.JSON(401, gin.H{
-				"error":   "Unauthorized",
+				"error":   "Organization not found",
 				"success": false,
 			})
 			c.Abort()
@@ -39,8 +39,8 @@ func OrganizationMiddleware() gin.HandlerFunc {
 		}
 
 		if response.Status != 200 {
-			c.JSON(500, gin.H{
-				"error":   "Something Went Wrong",
+			c.JSON(401, gin.H{
+				"error":   "You account is not up to date, please contact admin",
 				"success": false,
 			})
 			c.Abort()

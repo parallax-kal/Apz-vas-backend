@@ -39,7 +39,7 @@ func PartialAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		user.Password = ""
+		user.Passwords = ""
 
 		c.Set("user_data", user)
 		c.Next()

@@ -5,6 +5,8 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"encoding/json"
+	"os"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -176,7 +178,7 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 
 func SignupOrganization() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var usermodel models.User
+		var usermodel utils.UserEmailedData
 		if err := c.ShouldBindJSON(&usermodel); err != nil {
 			c.JSON(400, gin.H{
 				"error":   err.Error(),
@@ -195,7 +197,7 @@ func SignupOrganization() gin.HandlerFunc {
 			return
 		}
 
-		user, err := CreateUser(usermodel)
+		token, err := utils.GenerateTokenFromUserData(usermodel)
 
 		if err != nil {
 			c.JSON(500, gin.H{
@@ -204,11 +206,10 @@ func SignupOrganization() gin.HandlerFunc {
 			})
 			return
 		}
-		token, err := utils.GenerateToken(utils.UserData{
-			ID:   user.ID,
-			Role: user.Role,
-		})
-		if err != nil {
+
+		var link = os.Getenv("FRONTEND_URL") + "/signup/continue?token=" + token
+
+		if err := utils.SendMail(usermodel.Email, "Organization Signup", "Please click on the link below to continue with your registration: "+link); err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
@@ -216,10 +217,9 @@ func SignupOrganization() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(201, gin.H{
-			"message": "User registered successfully",
+		c.JSON(200, gin.H{
+			"message": "We have sent you an email with a link to continue with your registration",
 			"success": true,
-			"token":   token,
 		})
 	}
 }
@@ -376,50 +376,50 @@ func DeleteOrganization() gin.HandlerFunc {
 
 func CreateOrganization() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var user models.User
-		if err := c.ShouldBindJSON(&user); err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
+		// var user models.User
+		// if err := c.ShouldBindJSON(&user); err != nil {
+		// 	c.JSON(400, gin.H{
+		// 		"error":   err.Error(),
+		// 		"success": false,
+		// 	})
+		// 	return
+		// }
 
-		validationError := ValidateUser(user)
+		// // validationError := ValidateUser(user)
 
-		if validationError != nil {
-			c.JSON(400, gin.H{
-				"error":   validationError.Error(),
-				"success": false,
-			})
-			return
-		}
-		_, err := CreateUser(user)
+		// // if validationError != nil {
+		// // 	c.JSON(400, gin.H{
+		// // 		"error":   validationError.Error(),
+		// // 		"success": false,
+		// // 	})
+		// // 	return
+		// // }
+		// _, err := CreateUser(user)
 
-		if err != nil {
-			c.JSON(500, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
+		// if err != nil {
+		// 	c.JSON(500, gin.H{
+		// 		"error":   err.Error(),
+		// 		"success": false,
+		// 	})
+		// 	return
+		// }
 
-		var organization models.Organization
+		// var organization models.Organization
 
-		if err := c.ShouldBindJSON(&organization); err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
+		// if err := c.ShouldBindJSON(&organization); err != nil {
+		// 	c.JSON(400, gin.H{
+		// 		"error":   err.Error(),
+		// 		"success": false,
+		// 	})
+		// 	return
+		// }
 
-		organization.UserId = user.ID
+		// organization.UserId = user.ID
 
-		c.JSON(201, gin.H{
-			"message": "Organization created successfully",
-			"success": true,
-		})
+		// c.JSON(201, gin.H{
+		// 	"message": "Organization created successfully",
+		// 	"success": true,
+		// })
 
 	}
 }

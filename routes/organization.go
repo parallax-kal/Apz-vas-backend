@@ -37,7 +37,6 @@ func InitializeOrganizationRoutes(router *gin.RouterGroup) {
 		controllers.UpdateOrganization(),
 	)
 	router.PUT("/settings",
-		middlewares.AuthMiddleware(),
 		middlewares.OrganizationMiddleware(),
 		middlewares.PasswordChecker(),
 		controllers.UpdateOrganization(),

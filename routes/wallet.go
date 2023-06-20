@@ -43,7 +43,7 @@ func InitializeWalletRoutes(router *gin.RouterGroup) {
 	)
 
 	router.POST("/withdraw-from-wallet",
-		middlewares.AuthMiddleware(),
+		middlewares.PasswordChecker(),
 		middlewares.OrganizationMiddleware(),
 		middlewares.WalletMiddleware(),
 		controllers.WithDrawFromWallet(),

@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"os"
 	"strings"
-	// "time"
+	"time"
 )
 
 type Claims struct {
@@ -20,18 +20,77 @@ type UserData struct {
 	Role string    `json:"role"`
 }
 
+type UserEmailedDataClaims struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	jwt.StandardClaims
+}
+
+type UserEmailedData struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func GenerateTokenFromUserData(data UserEmailedData) (string, error) {
+	// expires in 5 minutes
+	expriresAt := time.Now().Add(time.Minute * 5).Unix()
+
+	claims := &UserEmailedDataClaims{
+		Name:     data.Name,
+		Email:    data.Email,
+		Password: data.Password,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expriresAt,
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	// Create the JWT string
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+
+}
+
+func ExtractDataFromUserEmailedDataToken(tokenString string) (*UserEmailedData, error) {
+	claims := &UserEmailedDataClaims{}
+	// it is bearer token
+	// split at bearer
+	tokenSplit := strings.Split(tokenString, "Bearer ")[1]
+	token, err := jwt.ParseWithClaims(tokenSplit, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+	if err != nil {
+		return nil, errors.New("Invalid token")
+	}
+	if !token.Valid {
+		return nil, errors.New("Invalid token")
+	}
+
+	return &UserEmailedData{
+		Name:     claims.Name,
+		Email:    claims.Email,
+		Password: claims.Password,
+	}, nil
+}
+
 // GenerateToken generates a jwt token for the user
 func GenerateToken(data UserData) (string, error) {
 
 	// expires in 7 days
-	// expriresAt := time.Now().Add(time.Hour * 24 * 7).Unix()
+	expriresAt := time.Now().Add(time.Hour * 24 * 7).Unix()
 
 	claims := &Claims{
 		ID:   data.ID,
 		Role: data.Role,
-		// StandardClaims: jwt.StandardClaims{
-		// 	ExpiresAt: expriresAt,
-		// },
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expriresAt,
+		},
 	}
 
 	// Declare the token with the algorithm used for signing, and the claims

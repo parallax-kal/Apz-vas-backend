@@ -3,22 +3,29 @@ package routes
 import (
 	"apz-vas/controllers"
 	"apz-vas/middlewares"
+
 	"github.com/gin-gonic/gin"
 )
 
 func InitializeUserRouters(router *gin.RouterGroup) {
 	router.POST("/login", controllers.LoginUser())
 	router.PUT("/account-settings",
-		middlewares.AuthMiddleware(),
 		middlewares.PasswordChecker(),
 		controllers.AccountSettings(),
 	)
 	router.PUT("/change-password",
-		middlewares.AuthMiddleware(),
 		middlewares.PasswordChecker(),
 		controllers.UpdatePassword(),
 	)
+	router.POST("/get-verification-link",
+		middlewares.PasswordChecker(),
+		controllers.GetVerificationLink(),
+	)
+	router.PUT("/change-email",
+		controllers.ChangeEmail(),
+	)
 	router.POST("/signup", controllers.SignupOrganization())
+	router.GET("/verify", controllers.VerifyUser())
 	router.POST("/google-login", controllers.GoogleLogin())
 	router.POST("/google-signup", controllers.GoogleRegister())
 	router.GET("/get-users",
