@@ -36,7 +36,7 @@ func VASServiceMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		
+
 		c.Set("service_data", Service)
 
 		c.Next()
@@ -50,7 +50,7 @@ func ServiceProviderMiddleware() gin.HandlerFunc {
 		var service = c.MustGet("service_data").(models.VASService)
 		var provider models.VASProvider
 		if err := configs.DB.Where("id = ?", service.ProviderId).First(&provider).Error; err != nil {
-			c.JSON(200, gin.H{
+			c.JSON(400, gin.H{
 				"message": "This Service doesn't have provider. Contact Admin About this.",
 				"success": false,
 			})
@@ -58,7 +58,7 @@ func ServiceProviderMiddleware() gin.HandlerFunc {
 			return
 		}
 		if provider.Status != "Active" {
-			c.JSON(200, gin.H{
+			c.JSON(400, gin.H{
 				"message": "The Provider for this service is not active.",
 				"success": false,
 			})
@@ -76,11 +76,7 @@ func NickNameService() gin.HandlerFunc {
 		var nickname = strings.Split(c.Request.RequestURI, "/")[2]
 
 		if nickname == "" {
-			c.JSON(400, gin.H{
-				"error":   "Service Id is required",
-				"success": false,
-			})
-			c.Abort()
+			c.Redirect(302, "/not-found")
 			return
 		}
 
@@ -90,7 +86,7 @@ func NickNameService() gin.HandlerFunc {
 
 		if err := configs.DB.Where("nick_name = ?", nickname).First(&Service).Error; err != nil {
 			c.JSON(404, gin.H{
-				"error":   "Service Not Found",
+				"error":   "Service Not Found. It may have been deleted or It is invalid.",
 				"success": false,
 			})
 			c.Abort()
@@ -98,10 +94,12 @@ func NickNameService() gin.HandlerFunc {
 		}
 
 		if Service.Status != "Active" {
-			c.JSON(200, gin.H{
-				"error":   "Service is not active. Contact Admin for a reason!",
-				"success": true,
-			})
+			c.JSON(
+				400,
+				gin.H{
+					"error":   "Service is not active. Contact Admin for a reason!",
+					"success": true,
+				})
 			c.Abort()
 			return
 		}

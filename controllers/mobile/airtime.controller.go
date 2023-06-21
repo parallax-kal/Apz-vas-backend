@@ -29,9 +29,9 @@ func GetAirtimeVendors() gin.HandlerFunc {
 		}
 
 		c.JSON(200, gin.H{
-			"airtime_vendors": responseBody,
-			"message":         "Airtime Vendors Retrieved successfully",
 			"success":         true,
+			"airtime_vendors": responseBody,
+			"message":         "Airtime Vendors Retrieved successfully.",
 		})
 	}
 }
