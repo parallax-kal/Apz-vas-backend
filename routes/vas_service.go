@@ -25,7 +25,7 @@ func InitializeVasServiceRoutes(router *gin.RouterGroup) {
 		mobile.BuyAirtime(),
 	)
 
-	router.GET("/bundle/categories",
+	router.GET("/bundle/get-categories",
 		middlewares.OrganizationAPIMiddleware(),
 		middlewares.NickNameService(),
 		middlewares.ServiceProviderMiddleware(),

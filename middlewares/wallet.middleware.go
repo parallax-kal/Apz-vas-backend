@@ -21,13 +21,19 @@ func CheckIfPaymentCanBeDone() gin.HandlerFunc {
 		body, err := ioutil.ReadAll(c.Request.Body)
 		if err != nil {
 			// Handle the error
-			c.JSON(400, gin.H{"error": "Failed to read request body"})
+			c.JSON(500, gin.H{
+				"error":   "An error occured. Please try again or contact admin.",
+				"success": false,
+			})
 			c.Abort()
 			return
 		}
 		if err := json.Unmarshal(body, &requestBody); err != nil {
 			// Handle the error
-			c.JSON(400, gin.H{"error": "Failed to bind request body to struct"})
+			c.JSON(500, gin.H{
+				"error":   "An error occured. Please try again or contact admin.",
+				"success": false,
+			})
 			c.Abort()
 			return
 		}
@@ -63,7 +69,7 @@ func CheckIfPaymentCanBeDone() gin.HandlerFunc {
 		if ukesheResponseError != nil {
 			c.JSON(500, gin.H{
 				"success": false,
-				"error":   ukesheResponseError.Error(),
+				"error":   "An error occured, please try again or contact admin.",
 			})
 			c.Abort()
 			return
