@@ -19,19 +19,12 @@ var (
 )
 
 func RefreshTokenPeriodically() {
-	// Initially, perform the authentication and get the token
 
 	authenticate()
-
-	// Set the timer to refresh the token periodically
 	timer := time.NewTimer(tokenDuration)
 	for {
 		<-timer.C
-
-		// Refresh the token
 		authenticate()
-
-		// Reset the timer for the next refresh
 		timer.Reset(tokenDuration)
 	}
 }
@@ -41,7 +34,6 @@ func authenticate() {
 
 		fmt.Println("Authenticating...")
 		var ukheshe_link = os.Getenv("UKHESHE_LINK")
-		// Send a request to renew the token
 		resp, err := axios.Post(ukheshe_link+"/eclipse-conductor/rest/v1/authentication/renew", map[string]interface{}{
 			"jwt": token,
 		}, nil)
@@ -54,7 +46,6 @@ func authenticate() {
 			fmt.Println("Unable to renew the token.")
 			continue
 		}
-		// Parse the response and update the stored token
 		tokenMutex.Lock()
 
 		var responseBody map[string]interface{}
@@ -66,8 +57,6 @@ func authenticate() {
 		token = tokensplit
 		expiresStr := responseBody["expires"].(string)
 		expires, _ := time.Parse(time.RFC3339, expiresStr)
-
-		// Convert the expiration time to GMT
 		tokenExpires = expires
 		tokenMutex.Unlock()
 		fmt.Println("Authenticated.")
@@ -83,13 +72,11 @@ func MakeAuthenticatedRequest(add_tenant_id bool) *axios.Instance {
 
 	if time.Now().After(expires) {
 		authenticate()
-		// Retrieve the updated token
 		tokenMutex.Lock()
 		currentToken = token
 		tokenMutex.Unlock()
 	}
 
-	// Create an Axios instance
 	var ukheshe_link = os.Getenv("UKHESHE_LINK")
 
 	var ukheshe_configs *axios.InstanceConfig
