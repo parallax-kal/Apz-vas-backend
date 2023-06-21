@@ -23,7 +23,6 @@ func OrganizationMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// https://eclipse-java-sandbox.ukheshe.rocks/eclipse-conductor/rest/v1/tenants/{tenantId}/organisations/{organisationId}
 
 		Ukheshe_Client := configs.MakeAuthenticatedRequest(true)
 

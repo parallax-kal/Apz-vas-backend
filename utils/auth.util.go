@@ -107,8 +107,7 @@ func GenerateToken(data UserData) (string, error) {
 
 func ExtractDataFromToken(tokenString string) (*UserData, error) {
 	claims := &Claims{}
-	// it is bearer token
-	// split at bearer
+
 	tokenSplit := strings.Split(tokenString, "Bearer ")[1]
 	token, err := jwt.ParseWithClaims(tokenSplit, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil

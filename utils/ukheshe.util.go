@@ -5,9 +5,7 @@ import (
 	"apz-vas/models"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,7 +13,6 @@ func PayForService(c *gin.Context) error {
 	var wallet = c.MustGet("wallet_data").(map[string]interface{})
 	var organization = c.MustGet("organization_data").(models.Organization)
 	var service = c.MustGet("service_data").(models.VASService)
-	// https://eclipse-java-sandbox.ukheshe.rocks/eclipse-conductor/rest/v1/tenants/{tenantId}/wallets/transfers
 	var transfer models.Transaction
 	var requestBody = c.MustGet("request_body").(map[string]interface{})
 	requestBodyBytes, err := json.Marshal(requestBody)

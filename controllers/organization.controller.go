@@ -376,50 +376,6 @@ func DeleteOrganization() gin.HandlerFunc {
 
 func CreateOrganization() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// var user models.User
-		// if err := c.ShouldBindJSON(&user); err != nil {
-		// 	c.JSON(400, gin.H{
-		// 		"error":   err.Error(),
-		// 		"success": false,
-		// 	})
-		// 	return
-		// }
-
-		// // validationError := ValidateUser(user)
-
-		// // if validationError != nil {
-		// // 	c.JSON(400, gin.H{
-		// // 		"error":   validationError.Error(),
-		// // 		"success": false,
-		// // 	})
-		// // 	return
-		// // }
-		// _, err := CreateUser(user)
-
-		// if err != nil {
-		// 	c.JSON(500, gin.H{
-		// 		"error":   err.Error(),
-		// 		"success": false,
-		// 	})
-		// 	return
-		// }
-
-		// var organization models.Organization
-
-		// if err := c.ShouldBindJSON(&organization); err != nil {
-		// 	c.JSON(400, gin.H{
-		// 		"error":   err.Error(),
-		// 		"success": false,
-		// 	})
-		// 	return
-		// }
-
-		// organization.UserId = user.ID
-
-		// c.JSON(201, gin.H{
-		// 	"message": "Organization created successfully",
-		// 	"success": true,
-		// })
 
 	}
 }

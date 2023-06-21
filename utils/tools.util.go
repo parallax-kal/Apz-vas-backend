@@ -34,7 +34,6 @@ func GetOffset(page int, limit int) int {
 }
 
 func StructToMap(obj interface{}) map[string]interface{} {
-	// convert struct to map using json marshal
 	var data map[string]interface{}
 	inrec, _ := json.Marshal(obj)
 	json.Unmarshal(inrec, &data)

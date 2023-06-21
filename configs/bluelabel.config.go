@@ -14,8 +14,6 @@ func getBlueLabelClient() *axios.Instance {
 
 	var blueLabelURL = "https://api.qa.bltelecoms.net"
 
-	// append api key to the url as header
-
 	var blueLabelHeaders = http.Header{
 		"Content-Type":       []string{"application/json"},
 		"apikey":             []string{blueLabelApiKey},

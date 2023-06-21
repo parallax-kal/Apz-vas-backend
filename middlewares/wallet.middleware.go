@@ -16,7 +16,6 @@ func CheckIfPaymentCanBeDone() gin.HandlerFunc {
 		var wallet = c.MustGet("wallet_data").(map[string]interface{})
 		var organization = c.MustGet("organization_data").(models.Organization)
 		var service = c.MustGet("service_data").(models.VASService)
-		// https://eclipse-java-sandbox.ukheshe.rocks/eclipse-conductor/rest/v1/tenants/{tenantId}/wallets/transfers
 
 		var requestBody = make(map[string]interface{})
 		body, err := ioutil.ReadAll(c.Request.Body)
@@ -104,7 +103,6 @@ func WalletMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// https://eclipse-java-sandbox.ukheshe.rocks/eclipse-conductor/rest/v1/tenants/{tenantId}/wallets/{walletId}
 		Ukheshe_Client := configs.MakeAuthenticatedRequest(true)
 		response, err := Ukheshe_Client.Get("/wallets/" + utils.ConvertIntToString(int(wallet.Ukheshe_Id)))
 

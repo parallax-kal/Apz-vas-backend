@@ -10,7 +10,6 @@ import (
 	"strings"
 )
 
-// ConnectDb connects to the database
 var DB = connectDb()
 
 var services = []models.VASService{
@@ -102,16 +101,13 @@ func seed(db *gorm.DB) {
 	var providers []models.VASProvider
 	db.Find(&providers)
 	for _, service := range services {
-		// all the services be of BlueLabel
 		service.ProviderId = providers[0].ID
-		// create or update
 		newService := db.Create(&service)
 		if newService.Error != nil {
 			fmt.Println(newService.Error)
 		}
 
 	}
-	// FOR EXAMPLE, BLUE LABEL HAS MOBILE AIRTIME AND MOBILE DATA
 }
 
 func migrate(db *gorm.DB) {
