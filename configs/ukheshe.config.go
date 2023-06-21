@@ -76,13 +76,11 @@ func authenticate() {
 }
 
 func MakeAuthenticatedRequest(add_tenant_id bool) *axios.Instance {
-	// Retrieve the token and check its expiration
 	tokenMutex.Lock()
 	currentToken := token
 	expires := tokenExpires
 	tokenMutex.Unlock()
 
-	// If the token has expired, perform authentication again
 	if time.Now().After(expires) {
 		authenticate()
 		// Retrieve the updated token
