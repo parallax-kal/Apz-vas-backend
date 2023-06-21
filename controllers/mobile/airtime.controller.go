@@ -14,7 +14,7 @@ func GetAirtimeVendors() gin.HandlerFunc {
 		var response, err = configs.BlueLabelCleint.Get("/mobile/airtime/products")
 		if err != nil {
 			c.JSON(500, gin.H{
-				"error":   "Error Getting Airtime Vendors",
+				"error":   "Something went wrong, try again or contact admin.",
 				"success": false,
 			})
 			return
@@ -39,12 +39,11 @@ func GetAirtimeVendors() gin.HandlerFunc {
 func BuyAirtime() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-
 		var requestBody = c.MustGet("request_body").(map[string]interface{})
 
 		mobileNumber, amount, deviceId, vendorId := requestBody["mobile_number"].(string), requestBody["amount"].(float64), requestBody["device_id"].(string), requestBody["vendor_id"].(string)
 		var organization = c.MustGet("organization_data").(models.Organization)
-		
+
 		if mobileNumber == "" {
 			c.JSON(400, gin.H{
 				"success": false,

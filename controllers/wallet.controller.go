@@ -806,10 +806,13 @@ func GetWalletBalances() gin.HandlerFunc {
 		var currentBalance = wallet_body["currentBalance"].(float64)
 
 		c.JSON(200, gin.H{
-			"success":           true,
-			"message":           "Wallet Balance retrieved successfully",
-			"available_balance": availableBalance,
-			"current_balance":   currentBalance,
+			"success": true,
+			"message": "Wallet Balance retrieved successfully",
+			"balances": map[string]interface{}{
+
+				"available_balance": availableBalance,
+				"current_balance":   currentBalance,
+			},
 		})
 	}
 }
@@ -817,21 +820,6 @@ func GetWalletBalances() gin.HandlerFunc {
 func GetTransactionHistory() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get transaction_type param
-		transaction_type := c.Param("transaction_type")
-		allowedValues := []string{"transaction", "topup", "withdraw"}
-		found := false
-		for _, value := range allowedValues {
-			if transaction_type == value {
-				found = true
-				break
-			}
-		}
-
-		// If the value is not found, reject the request with a "Not Found" response
-		if !found {
-			c.Redirect(404, "/*")
-			return
-		}
 
 		page, limit := c.Query("page"), c.Query("limit")
 		if page == "" {
@@ -871,122 +859,204 @@ func GetTransactionHistory() gin.HandlerFunc {
 
 		var total int64
 
-		if transaction_type == "transaction" {
-			var transaction_history = []models.Transaction{}
-			var transactions = []TransactionHistory{}
-			var wallet = c.MustGet("wallet_data").(map[string]interface{})
+		var transaction_history = []models.Transaction{}
+		var transactions = []TransactionHistory{}
+		var wallet = c.MustGet("wallet_data").(map[string]interface{})
 
-			if err := configs.DB.Model(&models.Transaction{}).Where("organization_wallet_id = ?", int(wallet["walletId"].(float64))).Count(&total).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-
-			if err := configs.DB.Select("organization_wallet_id, service_id, amount, currency, created_at, rebate").Where("organization_wallet_id = ?", int(wallet["walletId"].(float64))).Order("created_at desc").Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-
-			for _, transaction := range transaction_history {
-				// delete transaction["id"]
-				var Service models.VASService
-				if err := configs.DB.Model(&models.VASService{}).Select("id, name").Where("id = ?", transaction.ServiceId).First(&Service).Error; err != nil {
-					c.JSON(500, gin.H{
-						"error":   err.Error(),
-						"success": false,
-					})
-					return
-				}
-				transactions = append(transactions, TransactionHistory{
-					Amount:      transaction.Amount,
-					Rebate:      transaction.Rebate,
-					Currency:    transaction.Currency,
-					CreatedAt:   time.Unix(transaction.CreatedAt, 0),
-					Description: transaction.Description,
-					Service:     Service.Name,
-				})
-
-			}
-
-			c.JSON(200, gin.H{
-				"transaction_history": transactions,
-				"metadata": map[string]interface{}{
-					"limit": limitInt,
-					"page":  pageInt,
-					"total": total,
-				},
-				"success": true,
-			})
-
-		} else if transaction_type == "topup" {
-			var transaction_history []models.Topup
-
-			if err := configs.DB.Model(&models.Topup{}).Count(&total).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-
-			if err := configs.DB.Select("amount, currency, type, sub_type, gate_way, status, created_at, expires_at").Order("created_at desc").Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-
-			c.JSON(200, gin.H{
-				"transaction_history": transaction_history,
-				"metadata": map[string]interface{}{
-					"limit": limitInt,
-					"page":  pageInt,
-					"total": total,
-				},
-				"success": true,
-			})
-
-		} else if transaction_type == "withdraw" {
-			var transaction_history []models.Withdraw
-
-			if err := configs.DB.Model(&models.Withdraw{}).Count(&total).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-			if err := configs.DB.Select("type, sub_type, gate_way, fee, amount, currency, deliver_to_phone, bank, branch_code, status, expires_at, created_at, account_number, account_name").Order("created_at desc").Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-
-			c.JSON(200, gin.H{
-				"transaction_history": transaction_history,
-				"metadata": map[string]interface{}{
-					"limit": limitInt,
-					"page":  pageInt,
-					"total": total,
-				},
-				"success": true,
-			})
-
-		} else {
+		if err := configs.DB.Model(&models.Transaction{}).Where("organization_wallet_id = ?", int(wallet["walletId"].(float64))).Count(&total).Error; err != nil {
 			c.JSON(500, gin.H{
-				"error":   "Something Went Wrong",
+				"error":   err.Error(),
 				"success": false,
 			})
 			return
 		}
+
+		if err := configs.DB.Select("organization_wallet_id, service_id, amount, currency, created_at, rebate").Where("organization_wallet_id = ?", int(wallet["walletId"].(float64))).Order("created_at desc").Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		for _, transaction := range transaction_history {
+			// delete transaction["id"]
+			var Service models.VASService
+			if err := configs.DB.Model(&models.VASService{}).Select("id, name").Where("id = ?", transaction.ServiceId).First(&Service).Error; err != nil {
+				c.JSON(500, gin.H{
+					"error":   err.Error(),
+					"success": false,
+				})
+				return
+			}
+			transactions = append(transactions, TransactionHistory{
+				Amount:      transaction.Amount,
+				Rebate:      transaction.Rebate,
+				Currency:    transaction.Currency,
+				CreatedAt:   time.Unix(transaction.CreatedAt, 0),
+				Description: transaction.Description,
+				Service:     Service.Name,
+			})
+
+		}
+
+		c.JSON(200, gin.H{
+			"success": true,
+			"message": "Transaction history retrieved succesfully.",
+			"transaction_history": transactions,
+			"metadata": map[string]interface{}{
+				"limit": limitInt,
+				"page":  pageInt,
+				"total": total,
+			},
+		})
+
+	}
+}
+
+func GetWithdrawHistory() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// get transaction_type param
+
+		page, limit := c.Query("page"), c.Query("limit")
+		if page == "" {
+			c.JSON(400, gin.H{
+				"error":   "Page is required",
+				"success": false,
+			})
+			return
+		}
+		if limit == "" {
+			c.JSON(400, gin.H{
+				"error":   "Limit is required",
+				"success": false,
+			})
+			return
+		}
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
+
+		if pageInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		offset := utils.GetOffset(pageInt, limitInt)
+
+		var total int64
+
+		var transaction_history []models.Withdraw
+
+		if err := configs.DB.Model(&models.Withdraw{}).Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+		if err := configs.DB.Select("type, sub_type, gate_way, fee, amount, currency, deliver_to_phone, bank, branch_code, status, expires_at, created_at, account_number, account_name").Order("created_at desc").Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"success": true,
+			"message": "Withdraw history retrieved succesfully.",
+			"transaction_history": transaction_history,
+			"metadata": map[string]interface{}{
+				"limit": limitInt,
+				"page":  pageInt,
+				"total": total,
+			},
+		})
+
+	}
+}
+
+func GetTopupHistory() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// get transaction_type param
+
+		page, limit := c.Query("page"), c.Query("limit")
+		if page == "" {
+			c.JSON(400, gin.H{
+				"error":   "Page is required",
+				"success": false,
+			})
+			return
+		}
+		if limit == "" {
+			c.JSON(400, gin.H{
+				"error":   "Limit is required",
+				"success": false,
+			})
+			return
+		}
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
+
+		if pageInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		offset := utils.GetOffset(pageInt, limitInt)
+
+		var total int64
+
+		var transaction_history []models.Topup
+
+		if err := configs.DB.Model(&models.Topup{}).Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		if err := configs.DB.Select("amount, currency, type, sub_type, gate_way, status, created_at, expires_at").Order("created_at desc").Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"success": true,
+			"message": "Topup history retrieved succesfully.",
+			"transaction_history": transaction_history,
+			"metadata": map[string]interface{}{
+				"limit": limitInt,
+				"page":  pageInt,
+				"total": total,
+			},
+		})
 
 	}
 }

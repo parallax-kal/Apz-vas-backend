@@ -507,7 +507,7 @@ func GetVasServiceTransactionHistory() gin.HandlerFunc {
 		}
 
 		c.JSON(200, gin.H{
-			"message":                  "VAS Service Transaction History retrieved successfully",
+			"message":                  "VAS Service Transaction History retrieved successfully.",
 			"success":                  true,
 			"vas_service_transactions": vas_service_transactions_history,
 			"metadata": map[string]interface{}{

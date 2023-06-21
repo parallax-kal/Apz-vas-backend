@@ -41,11 +41,23 @@ func InitializeWalletRoutes(router *gin.RouterGroup) {
 		controllers.TopUpWallet(),
 	)
 
-	router.GET("/get-transaction-history/:transaction_type",
+	router.GET("/get-transaction-history",
+		middlewares.OrganizationAPIMiddleware(),
+		middlewares.WalletMiddleware(),
+		controllers.GetTransactionHistory(),
+	)
+
+	router.GET("/get-transaction-history/topup",
 		middlewares.AuthMiddleware(),
 		middlewares.OrganizationMiddleware(),
 		middlewares.WalletMiddleware(),
-		controllers.GetTransactionHistory(),
+		controllers.GetTopupHistory(),
+	)
+	router.GET("/get-transaction-history/withdraw",
+		middlewares.AuthMiddleware(),
+		middlewares.OrganizationMiddleware(),
+		middlewares.WalletMiddleware(),
+		controllers.GetWithdrawHistory(),
 	)
 
 	router.POST("/withdraw-from-wallet",
