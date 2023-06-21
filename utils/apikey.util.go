@@ -3,8 +3,6 @@ package utils
 import (
 	"apz-vas/configs"
 	"apz-vas/models"
-	"fmt"
-
 	"github.com/google/uuid"
 )
 
@@ -23,7 +21,6 @@ func ConvertStringToUUID(str string) uuid.UUID {
 	// convert string to uuid
 	uid, err := uuid.Parse(str)
 	if err != nil {
-		fmt.Println(err)
 		return uuid.Nil
 	}
 	return uid

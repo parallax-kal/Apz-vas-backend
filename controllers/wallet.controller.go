@@ -5,10 +5,8 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"time"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -46,7 +44,6 @@ func GetWalletTypes() gin.HandlerFunc {
 
 		// delete the wallet type of mode system
 		for i := 0; i < len(responseBody); i++ {
-			fmt.Println(responseBody[i])
 			if responseBody[i]["mode"] == "SYSTEM" {
 				responseBody = append(responseBody[:i], responseBody[i+1:]...)
 			}
@@ -92,7 +89,6 @@ func UpdateWallet() gin.HandlerFunc {
 		}
 
 		var walletBody = make(map[string]interface{})
-		fmt.Println(wallet)
 		walletBody["description"] = wallet.Description
 		walletBody["name"] = wallet.Name
 		walletBody["walletTypeId"] = wallet.WalletTypeID
@@ -177,7 +173,6 @@ func CreateWallet() gin.HandlerFunc {
 			return
 		}
 
-		// fmt.Println(wallet)
 		var walletBody = make(map[string]interface{})
 		walletBody["cardType"] = wallet.CardType
 		walletBody["description"] = wallet.Description
@@ -345,14 +340,27 @@ func WithDrawFromWallet() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// post https://eclipse-java-sandbox.ukheshe.rocks/eclipse-conductor/rest/v1/tenants/{tenantId}/wallets/{walletId}/withdrawals
 		var wallet = c.MustGet("wallet_data").(map[string]interface{})
+		var requirestBody = c.MustGet("request_body").(map[string]interface{})
 		var withdraw models.Withdraw
 
-		if err := c.ShouldBindJSON(&withdraw); err != nil {
-			c.JSON(400, gin.H{
-				"error":   "Invalid request payload",
+		var request_body_bytes, errf = json.Marshal(requirestBody)
+
+		if errf != nil {
+			c.JSON(500, gin.H{
+				"error":   errf.Error(),
 				"success": false,
 			})
 			return
+
+		}
+
+		if err := json.Unmarshal(request_body_bytes, &withdraw); err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+
 		}
 
 		if withdraw.Amount > wallet["availableBalance"].(float64) {
@@ -531,7 +539,6 @@ func TopUpWallet() gin.HandlerFunc {
 		response, err := UkhesheClient.Post("/wallets/"+utils.ConvertIntToString(int(wallet["walletId"].(float64)))+"/topups", topupBody)
 
 		if err != nil {
-			fmt.Println(err.Error())
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),
@@ -727,7 +734,6 @@ func saveWithdrawData(withdrawData map[string]interface{}) error {
 func saveTopupData(topupData map[string]interface{}, walletId float64, topupId uuid.UUID) error {
 	var TopupDataBody map[string]interface{}
 	var UkhesheClient = configs.MakeAuthenticatedRequest(true)
-	fmt.Println(topupData)
 	response, err := UkhesheClient.Get("/wallets/+" + utils.ConvertIntToString(int(walletId)) + "/topups/" + utils.ConvertIntToString(int(topupData["topupId"].(float64))))
 
 	if err != nil {
@@ -901,8 +907,8 @@ func GetTransactionHistory() gin.HandlerFunc {
 		}
 
 		c.JSON(200, gin.H{
-			"success": true,
-			"message": "Transaction history retrieved succesfully.",
+			"success":             true,
+			"message":             "Transaction history retrieved succesfully.",
 			"transaction_history": transactions,
 			"metadata": map[string]interface{}{
 				"limit": limitInt,
@@ -974,8 +980,8 @@ func GetWithdrawHistory() gin.HandlerFunc {
 		}
 
 		c.JSON(200, gin.H{
-			"success": true,
-			"message": "Withdraw history retrieved succesfully.",
+			"success":             true,
+			"message":             "Withdraw history retrieved succesfully.",
 			"transaction_history": transaction_history,
 			"metadata": map[string]interface{}{
 				"limit": limitInt,
@@ -1048,8 +1054,8 @@ func GetTopupHistory() gin.HandlerFunc {
 		}
 
 		c.JSON(200, gin.H{
-			"success": true,
-			"message": "Topup history retrieved succesfully.",
+			"success":             true,
+			"message":             "Topup history retrieved succesfully.",
 			"transaction_history": transaction_history,
 			"metadata": map[string]interface{}{
 				"limit": limitInt,

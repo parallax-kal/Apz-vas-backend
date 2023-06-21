@@ -5,6 +5,8 @@ import (
 	// "apz-vas/models"
 	// "apz-vas/utils"
 
+	"os"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -68,6 +70,20 @@ func SignupAdmin() gin.HandlerFunc {
 		// 	"success": true,
 		// 	"token":   token,
 		// })
+
+		// check if the client is https://apz.vas.com
+
+		// if not, return error
+
+		var clientOrigin = ctx.GetHeader("Origin")
+
+		if clientOrigin != os.Getenv("FRONTEND_URL") {
+			ctx.JSON(400, gin.H{
+				"error":   "Invalid Origin",
+				"success": false,
+			})
+			return
+		}
 
 	}
 }

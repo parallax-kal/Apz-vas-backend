@@ -5,7 +5,6 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"io/ioutil"
@@ -77,8 +76,6 @@ func CheckIfPaymentCanBeDone() gin.HandlerFunc {
 
 			json.Unmarshal(response.Data, &transferResponse)
 
-			fmt.Println(transferResponse)
-
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   transferResponse[0]["description"],
@@ -112,7 +109,6 @@ func WalletMiddleware() gin.HandlerFunc {
 		response, err := Ukheshe_Client.Get("/wallets/" + utils.ConvertIntToString(int(wallet.Ukheshe_Id)))
 
 		if err != nil {
-			fmt.Println(err.Error())
 			c.JSON(500, gin.H{
 				"error":   "An error occured. Please try again or contact admin.",
 				"success": false,

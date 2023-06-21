@@ -5,9 +5,7 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"encoding/json"
-	"fmt"
 	"time"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -150,7 +148,6 @@ func GetAdminVASServices() gin.HandlerFunc {
 
 			var service_provider models.VASProvider
 			if err := configs.DB.Where("id = ?", vasService.ProviderId).First(&service_provider).Error; err != nil {
-				fmt.Println(err.Error())
 				vas_services_providers = append(vas_services_providers, VasServiceProvider{
 					vasService,
 					service_provider.Name,

@@ -43,7 +43,6 @@ func PayForService(c *gin.Context) error {
 	transfer.OrganizationWalletId = wallet["walletId"].(float64)
 	transfer.Description = "Payment for " + service.Name
 	transfer.WalletId = ConvertStringToUUID(wallet["externalUniqueId"].(string))
-	fmt.Println(transfer.Amount)
 	if err := configs.DB.Create(&transfer).Error; err != nil {
 		return err
 	}

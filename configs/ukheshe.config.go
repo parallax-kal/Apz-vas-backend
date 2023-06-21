@@ -47,7 +47,6 @@ func authenticate() {
 		}, nil)
 
 		if err != nil {
-			fmt.Println(err.Error())
 			continue
 		}
 

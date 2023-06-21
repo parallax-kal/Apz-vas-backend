@@ -5,7 +5,6 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"time"
 
@@ -66,7 +65,6 @@ func GetMobileBundleProductsByCategory() gin.HandlerFunc {
 		json.Unmarshal(response.Data, &responseBody)
 
 		if response.Status != 200 {
-			fmt.Println(responseBody)
 			c.JSON(response.Status, responseBody)
 			return
 		}

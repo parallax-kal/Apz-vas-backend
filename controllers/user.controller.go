@@ -6,12 +6,10 @@ import (
 	"apz-vas/utils"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/vicanso/go-axios"
 )
@@ -232,7 +230,6 @@ func LoginUser() gin.HandlerFunc {
 			return
 		}
 		var userPassword = strings.Split(existingUser.Passwords, ",")[0]
-		fmt.Println(existingUser.Passwords)
 
 		if userPassword == "" {
 			c.JSON(400, gin.H{
