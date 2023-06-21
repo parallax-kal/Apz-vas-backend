@@ -44,6 +44,7 @@ func BuyAirtime() gin.HandlerFunc {
 		mobileNumber, amount, deviceId, vendorId := requestBody["mobile_number"].(string), requestBody["amount"].(float64), requestBody["device_id"].(string), requestBody["vendor_id"].(string)
 		var organization = c.MustGet("organization_data").(models.Organization)
 
+
 		if mobileNumber == "" {
 			c.JSON(400, gin.H{
 				"success": false,

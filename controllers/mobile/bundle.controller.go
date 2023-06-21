@@ -19,9 +19,9 @@ var categories = []string{
 func GetMobileBundleCategories() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(200, gin.H{
+			"success":    true,
 			"categories": categories,
 			"message":    "Mobile Bundle Categories Retrieved successfully",
-			"success":    true,
 		})
 	}
 }
@@ -154,7 +154,7 @@ func BuyMobileBundle() gin.HandlerFunc {
 
 		c.JSON(200, gin.H{
 			"success": true,
-			"message": "Mobile Bundle bought successfully",
+			"message": "Mobile Bundle bought successfully.",
 			"data":    responseBody,
 		})
 
