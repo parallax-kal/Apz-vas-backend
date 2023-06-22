@@ -971,7 +971,7 @@ func GetWithdrawHistory() gin.HandlerFunc {
 			})
 			return
 		}
-		if err := configs.DB.Select("type, sub_type, gate_way, fee, amount, currency, deliver_to_phone, bank, branch_code, status, expires_at, created_at, account_number, account_name").Order("created_at desc").Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
+		if err := configs.DB.Select("type, sub_type, gate_way, fee, amount, currency, delivery_to_phone, bank, branch_code, status, expires_at, created_at, account_number, account_name").Order("created_at desc").Offset(offset).Limit(limitInt).Find(&transaction_history).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,

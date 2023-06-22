@@ -60,7 +60,6 @@ func OrganizationMiddleware() gin.HandlerFunc {
 		c.Set("organization_version", response_data["version"])
 
 		c.Set("organization_data", organization)
-
 		c.Next()
 
 	}

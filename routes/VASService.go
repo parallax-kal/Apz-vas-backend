@@ -46,7 +46,7 @@ func InitializeVASServiceRoutes(router *gin.RouterGroup) {
 	)
 
 	router.GET("/get-vas-service-transaction",
-		middlewares.OrganizationMiddleware(),
+		middlewares.OrganizationAPIMiddleware(),
 		middlewares.VASServiceMiddleware(),
 		controllers.GetVasServiceTransactionHistory(),
 	)

@@ -5,8 +5,8 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"encoding/json"
-	"time"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 func GetVasServiceData() gin.HandlerFunc {
@@ -392,7 +392,6 @@ type VasServiceTransaction struct {
 
 func GetVasServiceTransactionHistory() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var user = c.MustGet("user_data").(models.User)
 
 		page, limit := c.Query("page"), c.Query("limit")
 
@@ -438,69 +437,40 @@ func GetVasServiceTransactionHistory() gin.HandlerFunc {
 		var vas_service_transactions_history []VasServiceTransaction
 
 		// check where serviceId is equal to the serviceId
-		if user.Role == "Organization" {
+		var organization = c.MustGet("organization_data").(models.Organization)
+		if err := configs.DB.Model(&models.Transaction{}).Select("service_id, external_id").Where("service_id = ? AND external_id = ?", service.ID, organization.ID).Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+		if err := configs.DB.Model(&models.Transaction{}).Select("service_id, external_id, service_data, rebate, amount, currency, created_at").Where("service_id = ? AND external_id = ?", service.ID, organization.ID).Order("created_at desc").Offset(offset).Limit(limitInt).Find(&vas_service_transactions).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
 
-			var organization models.Organization
-
-			if err := configs.DB.Where("user_id = ?", user.ID).First(&organization).Error; err != nil {
-				c.JSON(401, gin.H{
-					"error":   "Unauthorized",
-					"success": false,
-				})
-				c.Abort()
-				return
-			}
-
-			if err := configs.DB.Model(&models.Transaction{}).Select("service_id, external_id").Where("service_id = ? AND external_id = ?", service.ID, organization.ID).Count(&total).Error; err != nil {
+		for _, transaction := range vas_service_transactions {
+			var service_data map[string]interface{}
+			if err := json.Unmarshal([]byte(transaction.ServiceData), &service_data); err != nil {
 				c.JSON(500, gin.H{
 					"error":   err.Error(),
 					"success": false,
 				})
 				return
 			}
-			if err := configs.DB.Model(&models.Transaction{}).Select("service_id, external_id, service_data, rebate, amount, currency, created_at").Where("service_id = ? AND external_id = ?", service.ID, organization.ID).Order("created_at desc").Offset(offset).Limit(limitInt).Find(&vas_service_transactions).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-
-			for _, transaction := range vas_service_transactions {
-				var service_data map[string]interface{}
-				if err := json.Unmarshal([]byte(transaction.ServiceData), &service_data); err != nil {
-					c.JSON(500, gin.H{
-						"error":   err.Error(),
-						"success": false,
-					})
-					return
-				}
-				delete(service_data, "amount")
-				delete(service_data, "device_id")
-				vas_service_transactions_history = append(vas_service_transactions_history, VasServiceTransaction{
-					Amount:      transaction.Amount,
-					Rebate:      transaction.Rebate,
-					Currency:    transaction.Currency,
-					ServiceData: service_data,
-					CreatedAt:   time.Unix(transaction.CreatedAt, 0),
-				})
-			}
-
-		} else {
-			if err := configs.DB.Model(&models.Transaction{}).Where("service_id = ?", service.ID).Count(&total).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
-			if err := configs.DB.Where("service_id = ?", service.ID).Offset(offset).Limit(limitInt).Find(&vas_service_transactions).Error; err != nil {
-				c.JSON(500, gin.H{
-					"error":   err.Error(),
-					"success": false,
-				})
-				return
-			}
+			delete(service_data, "amount")
+			delete(service_data, "device_id")
+			vas_service_transactions_history = append(vas_service_transactions_history, VasServiceTransaction{
+				Amount:      transaction.Amount,
+				Rebate:      transaction.Rebate,
+				Currency:    transaction.Currency,
+				ServiceData: service_data,
+				CreatedAt:   time.Unix(transaction.CreatedAt, 0),
+			})
 		}
 
 		c.JSON(200, gin.H{

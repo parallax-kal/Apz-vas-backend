@@ -5,6 +5,7 @@ import (
 	"apz-vas/models"
 	"apz-vas/utils"
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -63,24 +64,8 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 		if organization.Company_Number != "" {
 			organizationBody["companyNumber"] = organization.Company_Number
 		}
-		if organization.Bank_Name != "" {
-			organizationBody["bankName"] = organization.Bank_Name
-		}
-		organizationBody["accountNumber"] = organization.Account_Number
-		organizationBody["externalUniqueId"] = organization.ID
 
-		if organization.Bank_Name != "" && organization.Account_Number != "" {
-			organizationBody["bankDetails"] = []map[string]interface{}{
-				{
-					"att": "bankName",
-					"val": organization.Bank_Name,
-				},
-				{
-					"att": "accountNumber",
-					"val": organization.Account_Number,
-				},
-			}
-		}
+		organizationBody["externalUniqueId"] = organization.ID
 
 		if organization.Organization_Type != "" {
 			organizationBody["type"] = organization.Organization_Type
@@ -248,67 +233,73 @@ func UpdateOrganization() gin.HandlerFunc {
 			})
 			return
 		}
-
 		var ukheshe_client = configs.MakeAuthenticatedRequest(true)
 
 		var organizationBody = make(map[string]interface{})
+		if org.Company_Name != "" {
+			organizationBody["name"] = org.Company_Name
+		} else {
+			organizationBody["name"] = nil
+		}
+		if org.Phone_Number1 != "" {
+			organizationBody["phone1"] = org.Phone_Number1
+		} else {
+			organizationBody["phone1"] = nil
+		}
+		if org.Phone_Number2 != "" {
+			organizationBody["phone2"] = org.Phone_Number2
+		} else {
+			organizationBody["phone2"] = nil
+		}
+		if org.Tax_Number != "" {
+			organizationBody["taxNumber"] = org.Tax_Number
+		} else {
+			organizationBody["taxNumber"] = nil
+		}
+		if org.Trading_Name != "" {
+			organizationBody["tradingName"] = org.Trading_Name
+		} else {
+			organizationBody["tradingName"] = nil
+		}
+		if org.Company_Number != "" {
+			organizationBody["companyNumber"] = org.Company_Number
+		} else {
+			organizationBody["companyNumber"] = nil
+		}
 
-		organizationBody["name"] = organization.Company_Name
-		organizationBody["phone1"] = organization.Phone_Number1
-		if organization.Phone_Number2 != "" {
-			organizationBody["phone2"] = organization.Phone_Number2
-		}
-		if organization.Tax_Number != "" {
-
-			organizationBody["taxNumber"] = organization.Tax_Number
-		}
-		if organization.Trading_Name != "" {
-
-			organizationBody["tradingName"] = organization.Trading_Name
-		}
-		if organization.Company_Number != "" {
-			organizationBody["companyNumber"] = organization.Company_Number
-		}
-		if organization.Bank_Name != "" {
-			organizationBody["bankName"] = organization.Bank_Name
-		}
-		organizationBody["accountNumber"] = organization.Account_Number
 		organizationBody["externalUniqueId"] = organization.ID
 
-		if organization.Bank_Name != "" && organization.Account_Number != "" {
-			organizationBody["bankDetails"] = []map[string]interface{}{
-				{
-					"att": "bankName",
-					"val": organization.Bank_Name,
-				},
-				{
-					"att": "accountNumber",
-					"val": organization.Account_Number,
-				},
-			}
+		if org.Organization_Type != "" {
+			organizationBody["type"] = org.Organization_Type
+		} else {
+			organizationBody["type"] = nil
 		}
 
-		if organization.Organization_Type != "" {
-			organizationBody["type"] = organization.Organization_Type
+		if org.Industrial_Classification != "" {
+			organizationBody["industrialClassification"] = org.Industrial_Classification
+		} else {
+			organizationBody["industrialClassification"] = nil
 		}
 
-		if organization.Industrial_Classification != "" {
-			organizationBody["industrialClassification"] = organization.Industrial_Classification
+		if org.Industrial_Sector != "" {
+			organizationBody["industrialSector"] = org.Industrial_Sector
+		} else {
+			organizationBody["industrialSector"] = nil
 		}
 
-		if organization.Industrial_Sector != "" {
-			organizationBody["industrialSector"] = organization.Industrial_Sector
-		}
+		if org.Registration_Date != "" {
+			organizationBody["businessRegistrationDate"] = org.Registration_Date // format("20230610")
 
-		if organization.Registration_Date != "" {
-			organizationBody["businessRegistrationDate"] = organization.Registration_Date // format("20230610")
-
+		} else {
+			organizationBody["businessRegistrationDate"] = nil
 		}
-		if organization.BusinessType != "" {
-			organizationBody["businessType"] = organization.BusinessType
+		if org.BusinessType != "" {
+			organizationBody["businessType"] = org.BusinessType
+		} else {
+			organizationBody["businessType"] = nil
 		}
-
 		organizationBody["version"] = c.MustGet("organization_version").(float64)
+		fmt.Println(organizationBody)
 
 		var response, ukesheResponseError = ukheshe_client.Put("/organisations/"+utils.ConvertIntToString(int(organization.Ukheshe_Id)), organizationBody)
 

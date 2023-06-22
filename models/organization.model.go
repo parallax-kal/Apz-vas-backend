@@ -16,8 +16,6 @@ type Organization struct {
 	Industrial_Sector         string    `gorm:"<-;type:varchar(255)" json:"industrial_sector"`
 	Industrial_Classification string    `gorm:"<-;type:varchar(255)" json:"industrial_classification"`
 	Tax_Number                string    `gorm:"<-;unique;not null;type:varchar(255)" json:"tax_number"`
-	Bank_Name                 string    `gorm:"<-;type:varchar(255)" json:"bank_name"`
-	Account_Number            string    `gorm:"<-;unique;type:varchar(255)" json:"account_number"`
 	Ukheshe_Id                uint32    `gorm:"<-;unique;not null;type:int" json:"ukheshe_id"`
 	Registration_Date         string    `gorm:"<-;type:varchar(255)" json:"registration_date"`
 	Organization_Type         string    `gorm:"<-;type:varchar(255)" json:"organization_type"`

@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/vicanso/go-axios"
 )
@@ -170,7 +169,6 @@ func PasswordChecker() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-
 			delete(requestData, "password")
 			c.Set("user_data", user)
 			c.Set("request_body", requestData)
