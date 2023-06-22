@@ -24,12 +24,14 @@ type UserEmailedDataClaims struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Role     string `json:"role"`
 	jwt.StandardClaims
 }
 
 type UserEmailedData struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
+	Role     string `json:"role"`
 	Password string `json:"password"`
 }
 
@@ -41,6 +43,7 @@ func GenerateTokenFromUserData(data UserEmailedData) (string, error) {
 		Name:     data.Name,
 		Email:    data.Email,
 		Password: data.Password,
+		Role:     data.Role,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expriresAt,
 		},
@@ -76,6 +79,7 @@ func ExtractDataFromUserEmailedDataToken(tokenString string) (*UserEmailedData, 
 		Name:     claims.Name,
 		Email:    claims.Email,
 		Password: claims.Password,
+		Role:     claims.Role,
 	}, nil
 }
 

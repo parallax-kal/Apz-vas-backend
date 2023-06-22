@@ -120,7 +120,6 @@ func migrate(db *gorm.DB) {
 		&models.User{},
 		&models.VASProvider{},
 		&models.Wallet{},
-		&models.Admin{},
 		&models.Organization{},
 		&models.Transaction{},
 		&models.Topup{},

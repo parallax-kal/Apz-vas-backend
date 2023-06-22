@@ -9,12 +9,6 @@ import (
 
 func InitializeVASServiceRoutes(router *gin.RouterGroup) {
 
-	router.POST("/create-vas-service",
-		middlewares.AuthMiddleware(),
-		middlewares.AdminMiddleware(),
-		controllers.CreateVasService(),
-	)
-
 	router.GET("/get-vas-services",
 		middlewares.OrganizationAPIMiddleware(),
 		controllers.GetOrganizationVASServices(),
@@ -22,7 +16,7 @@ func InitializeVASServiceRoutes(router *gin.RouterGroup) {
 
 	router.GET("/get-admin-vas-services",
 		middlewares.AuthMiddleware(),
-		middlewares.OrganizationMiddleware(),
+		middlewares.AdminMiddleware(),
 		controllers.GetAdminVASServices(),
 	)
 
@@ -51,9 +45,11 @@ func InitializeVASServiceRoutes(router *gin.RouterGroup) {
 		controllers.GetVasServiceTransactionHistory(),
 	)
 
-	router.DELETE("/delete-vas-service",
+	router.GET("/get-admin-vas-service-transaction",
 		middlewares.AuthMiddleware(),
 		middlewares.AdminMiddleware(),
-		controllers.DeleteVasService(),
+		middlewares.VASServiceMiddleware(),
+		controllers.GetVasServiceAdminTransactionHistory(),
 	)
+
 }

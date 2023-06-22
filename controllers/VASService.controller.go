@@ -22,60 +22,6 @@ func GetVasServiceData() gin.HandlerFunc {
 	}
 }
 
-func CreateVasService() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var vasService models.VASService
-		if err := c.ShouldBindJSON(&vasService); err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
-		if vasService.Name == "" {
-			c.JSON(400, gin.H{
-				"error":   "Name is required",
-				"success": false,
-			})
-			return
-		}
-		if len(vasService.Name) < 3 {
-			c.JSON(400, gin.H{
-				"error":   "Name must be at least 3 characters",
-				"success": false,
-			})
-			return
-		}
-		if vasService.Description == "" {
-			c.JSON(400, gin.H{
-				"error":   "Description is required",
-				"success": false,
-			})
-			return
-		}
-		if len(vasService.Description) < 3 {
-			c.JSON(400, gin.H{
-				"error":   "Description must be at least 3 characters",
-				"success": false,
-			})
-			return
-		}
-
-		if err := configs.DB.Create(&vasService).Error; err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-			return
-		}
-
-		c.JSON(200, gin.H{
-			"success": true,
-			"message": "VAS Service created successfully",
-		})
-	}
-}
-
 type VasServiceProvider struct {
 	models.VASService
 	Provider string `json:"provider"`
@@ -301,32 +247,6 @@ func UpdateVasService() gin.HandlerFunc {
 	}
 }
 
-func DeleteVasService() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var vasService models.VASService
-		if err := c.ShouldBindJSON(&vasService); err != nil {
-			c.JSON(400, gin.H{
-				"error":   "VAS Service not found",
-				"success": false,
-			})
-			return
-		}
-
-		if err := configs.DB.Where("id = ?", vasService.ID).Delete(&vasService).Error; err != nil {
-			c.JSON(404, gin.H{
-				"error":   "VAS Service not found",
-				"success": false,
-			})
-			return
-		}
-
-		c.JSON(200, gin.H{
-			"success": true,
-			"message": "VAS Service deleted successfully",
-		})
-	}
-}
-
 func OperationOnService() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		organization := c.MustGet("organization_data").(models.Organization)
@@ -388,6 +308,82 @@ type VasServiceTransaction struct {
 	Currency    string                 `json:"currency"`
 	ServiceData map[string]interface{} `json:"service_data"`
 	CreatedAt   time.Time              `json:"created_at"`
+}
+
+func GetVasServiceAdminTransactionHistory() gin.HandlerFunc {
+	return func(c*gin.Context) {
+
+
+		page, limit := c.Query("page"), c.Query("limit")
+
+		var service = c.MustGet("service_data").(models.VASService)
+		if page == "" {
+			c.JSON(400, gin.H{
+				"error":   "Page is required",
+				"success": false,
+			})
+			return
+		}
+		if limit == "" {
+			c.JSON(400, gin.H{
+				"error":   "Limit is required",
+				"success": false,
+			})
+			return
+		}
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
+
+		if pageInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		offset := utils.GetOffset(pageInt, limitInt)
+		// get offset
+		var total int64
+
+		var vas_service_transactions_history []models.Transaction
+
+		if err := configs.DB.Model(&models.Transaction{}).Where("service_id = ?", service.ID).Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		if err := configs.DB.Model(&models.Transaction{}).Where("service_id = ?", service.ID).Order("created_at desc").Offset(offset).Limit(limitInt).Find(&vas_service_transactions_history).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"message":                  "VAS Service Transaction History retrieved successfully.",
+			"success":                  true,
+			"vas_service_transactions": vas_service_transactions_history,
+			"metadata": map[string]interface{}{
+				"total": total,
+				"page":  pageInt,
+				"limit": limitInt,
+			},
+		},
+		)
+	}
 }
 
 func GetVasServiceTransactionHistory() gin.HandlerFunc {

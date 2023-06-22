@@ -290,6 +290,8 @@ func VerifyUser() gin.HandlerFunc {
 
 		user.Email = userData.Email
 		user.Name = userData.Name
+		user.Role = userData.Role
+		
 		user.Passwords = strings.Join([]string{
 			userData.Password,
 			"",

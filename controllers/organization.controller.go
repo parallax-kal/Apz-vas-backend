@@ -182,6 +182,8 @@ func SignupOrganization() gin.HandlerFunc {
 			return
 		}
 
+		usermodel.Role = "Organization"
+
 		token, err := utils.GenerateTokenFromUserData(usermodel)
 
 		if err != nil {
