@@ -36,6 +36,7 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 		}
 
 		organization.UserId = user.ID
+		organization.Email = user.Email
 
 		if err := configs.DB.Create(&organization).Error; err != nil {
 			c.JSON(500, gin.H{
@@ -47,7 +48,7 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 
 		var organizationBody = make(map[string]interface{})
 
-		organizationBody["email"] = user.Email
+		organizationBody["email"] = organization.Email
 		organizationBody["name"] = organization.Company_Name
 		organizationBody["phone1"] = organization.Phone_Number1
 		if organization.Phone_Number2 != "" {
@@ -375,7 +376,7 @@ func CreateOrganization() gin.HandlerFunc {
 
 func GetOrganizations() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var organizations []models.User
+		var organizations []models.Organization
 		// get page, limit query param
 		page, limit := c.Query("page"), c.Query("limit")
 		if page == "" {
@@ -415,7 +416,7 @@ func GetOrganizations() gin.HandlerFunc {
 		// get offset
 		var total int64
 
-		if err := configs.DB.Model(&models.User{}).Where("role = ?", "Organization").Count(&total).Error; err != nil {
+		if err := configs.DB.Model(&models.Organization{}).Count(&total).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
@@ -423,7 +424,7 @@ func GetOrganizations() gin.HandlerFunc {
 			return
 		}
 
-		if err := configs.DB.Where("role = ?", "Organization").Offset(offset).Limit(limitInt).Find(&organizations).Error; err != nil {
+		if err := configs.DB.Offset(offset).Limit(limitInt).Find(&organizations).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
