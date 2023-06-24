@@ -49,7 +49,8 @@ func connectDb() *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	//  drop all organization table
 	db.Exec("DROP TABLE users")
-	db.Exec("DROP TABLE organizations")
+	db.Exec("DROP TABLE admins")
+
 
 
 	if err != nil {
