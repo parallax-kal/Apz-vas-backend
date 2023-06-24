@@ -2,11 +2,12 @@ package utils
 
 import (
 	"errors"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/google/uuid"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 )
 
 type Claims struct {
@@ -49,6 +50,7 @@ func GenerateTokenFromUserData(data UserEmailedData) (string, error) {
 		},
 	}
 
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	// Create the JWT string
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
@@ -61,9 +63,8 @@ func GenerateTokenFromUserData(data UserEmailedData) (string, error) {
 }
 
 func ExtractDataFromUserEmailedDataToken(tokenString string) (*UserEmailedData, error) {
+
 	claims := &UserEmailedDataClaims{}
-	// it is bearer token
-	// split at bearer
 	tokenSplit := strings.Split(tokenString, "Bearer ")[1]
 	token, err := jwt.ParseWithClaims(tokenSplit, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil

@@ -11,14 +11,14 @@ type Organization struct {
 	Company_Name              string    `gorm:"<-;unique;not null;type:varchar(255)" json:"company_name"`
 	Owner_Name                string    `gorm:"<-;not null;type:varchar(255)" json:"owner_name"`
 	Email                     string    `gorm:"<-;unique;not null;type:varchar(255)" json:"email"`
-	Company_Number            string    `gorm:"<-;unique;type:varchar(255)" json:"company_number"`
-	Phone_Number1             string    `gorm:"<-;unique;type:varchar(255)" json:"phone_number1"`
-	Phone_Number2             string    `gorm:"<-;unique;type:varchar(255)" json:"phone_number2"`
-	Trading_Name              string    `gorm:"<-;unique;type:varchar(255)" json:"trading_name"`
+	Company_Number            string    `gorm:"<-;type:varchar(255)" json:"company_number"`
+	Phone_Number1             string    `gorm:"<-;type:varchar(255)" json:"phone_number1"`
+	Phone_Number2             string    `gorm:"<-;type:varchar(255)" json:"phone_number2"`
+	Trading_Name              string    `gorm:"<-;type:varchar(255)" json:"trading_name"`
 	Industrial_Sector         string    `gorm:"<-;type:varchar(255)" json:"industrial_sector"`
 	Industrial_Classification string    `gorm:"<-;type:varchar(255)" json:"industrial_classification"`
-	Tax_Number                string    `gorm:"<-;unique;not null;type:varchar(255)" json:"tax_number"`
-	Ukheshe_Id                uint32    `gorm:"<-;unique;not null;type:int" json:"ukheshe_id"`
+	Tax_Number                string    `gorm:"<-;type:varchar(255)" json:"tax_number"`
+	Ukheshe_Id                uint32    `gorm:"<-;type:int" json:"ukheshe_id"`
 	Registration_Date         string    `gorm:"<-;type:varchar(255)" json:"registration_date"`
 	Organization_Type         string    `gorm:"<-;type:varchar(255)" json:"organization_type"`
 	BusinessType              string    `gorm:"<-;type:varchar(255)" json:"businesstype"`

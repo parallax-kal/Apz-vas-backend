@@ -472,7 +472,7 @@ func ResetPassword() gin.HandlerFunc {
 		c.JSON(200, gin.H{
 			"success": true,
 			"message": "Password reset successfully",
-			"token":  newToken,
+			"token":   newToken,
 		})
 
 	}
@@ -534,7 +534,7 @@ func VerifyUser() gin.HandlerFunc {
 	}
 }
 
-func ValidateUser(user utils.UserEmailedData) error {
+func ValidateUser(user utils.UserEmailedData, passwordCheck bool) error {
 	if user.Name == "" {
 		return errors.New("Name is required.")
 	}
@@ -557,22 +557,21 @@ func ValidateUser(user utils.UserEmailedData) error {
 	if emailError != nil {
 		return errors.New(emailError.Error())
 	}
-	// VALIDATE PASSWORD
-	passwordError := utils.ValidatePassword(user.Password)
-	if passwordError != nil {
+	if passwordCheck {
+		// VALIDATE PASSWORD
+		passwordError := utils.ValidatePassword(user.Password)
+		if passwordError != nil {
+			return passwordError
+		}
 
-		return passwordError
+		// Hash the password
+		hashedPassword, err := utils.HashPassword(user.Password)
+		if err != nil {
+			return err
+		}
+		// CREATE USER
+		user.Password = hashedPassword
 	}
-
-	// Hash the password
-	hashedPassword, err := utils.HashPassword(user.Password)
-	if err != nil {
-
-		return err
-	}
-	// CREATE USER
-
-	user.Password = hashedPassword
 	return nil
 }
 
@@ -594,10 +593,8 @@ func CreateUser(user models.User) (*models.User, error) {
 			return nil, err
 		}
 		user.Passwords = "," + newPass
-	} else {
-		return nil, errors.New("User don't have password")
-	}
-
+	} 
+	
 	if err := configs.DB.Create(&user).Error; err != nil {
 		return nil, err
 	}
@@ -817,5 +814,118 @@ func AccountSettings() gin.HandlerFunc {
 }
 
 func GetUsers() gin.HandlerFunc {
-	return func(c *gin.Context) {}
+	return func(c *gin.Context) {
+
+		page, limit := c.Query("page"), c.Query("limit")
+
+		if page == "" {
+			c.JSON(400, gin.H{
+				"error":   "Page is required",
+				"success": false,
+			})
+			return
+		}
+		if limit == "" {
+			c.JSON(400, gin.H{
+				"error":   "Limit is required",
+				"success": false,
+			})
+			return
+		}
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
+
+		if pageInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		offset := utils.GetOffset(pageInt, limitInt)
+		// get offset
+		var total int64
+
+		var users []models.User
+
+		if err := configs.DB.Model(&models.User{}).Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		if err := configs.DB.Order("created_at DESC").Offset(offset).Limit(limitInt).Find(&users).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"success": true,
+			"users":   users,
+			"message": "Users fetched successfully",
+			"metadata": map[string]interface{}{
+				"total": total,
+				"page":  pageInt,
+				"limit": limitInt,
+			},
+		})
+
+	}
+}
+
+func ValidateUserOrgData() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		var userData utils.UserEmailedData
+
+		if err := c.ShouldBindJSON(&userData); err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		if err := ValidateUser(userData, false); err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		var ticket, errf = utils.GenerateTokenFromUserData(utils.UserEmailedData{
+			Email: userData.Email,
+			Role:  "Organization",
+			Name:  userData.Name,
+		})
+
+		if errf != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   errf.Error(),
+			})
+		}
+
+		c.JSON(200, gin.H{
+			"success": true,
+			"ticket":  ticket,
+			"message": "User Validated",
+		})
+
+	}
 }

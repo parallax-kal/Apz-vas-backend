@@ -12,6 +12,7 @@ func InitializeOrganizationRoutes(router *gin.RouterGroup) {
 
 	router.POST("/create-organization",
 		middlewares.AuthMiddleware(),
+		middlewares.AdminMiddleware(),
 		controllers.CreateOrganization(),
 	)
 

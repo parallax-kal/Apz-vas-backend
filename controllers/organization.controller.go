@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -174,7 +175,7 @@ func SignupOrganization() gin.HandlerFunc {
 			return
 		}
 
-		validationError := ValidateUser(usermodel)
+		validationError := ValidateUser(usermodel, true)
 
 		if validationError != nil {
 			c.JSON(400, gin.H{
@@ -371,6 +372,180 @@ func DeleteOrganization() gin.HandlerFunc {
 
 func CreateOrganization() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var data map[string]interface{}
+
+		if err := c.ShouldBindJSON(&data); err != nil {
+			c.JSON(400, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		var ticket = data["ticket"].(string)
+		var userData, err = utils.ExtractDataFromUserEmailedDataToken(ticket)
+
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		// check if the email exist
+
+		var user models.User
+
+		if err := configs.DB.Where("email = ?", userData.Email).First(&user).Error; err == nil {
+			c.JSON(400, gin.H{
+				"error":   "email already taken",
+				"success": false,
+			})
+			return
+		}
+
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   "email already taken",
+				"success": false,
+			})
+			return
+		}
+
+		dataBytes, err := json.Marshal(data)
+
+		if err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		var organization models.Organization
+		organization.Email = userData.Email
+		organization.Owner_Name = userData.Name
+
+		if err := json.Unmarshal(dataBytes, &organization); err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		if err := configs.DB.Create(&organization).Error; err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		var organizationBody = make(map[string]interface{})
+
+		organizationBody["email"] = organization.Email
+		organizationBody["name"] = organization.Company_Name
+		organizationBody["phone1"] = organization.Phone_Number1
+		if organization.Phone_Number2 != "" {
+			organizationBody["phone2"] = organization.Phone_Number2
+		}
+		if organization.Tax_Number != "" {
+
+			organizationBody["taxNumber"] = organization.Tax_Number
+		}
+		if organization.Trading_Name != "" {
+
+			organizationBody["tradingName"] = organization.Trading_Name
+		}
+		if organization.Company_Number != "" {
+			organizationBody["companyNumber"] = organization.Company_Number
+		}
+
+		organizationBody["externalUniqueId"] = organization.ID
+
+		if organization.Organization_Type != "" {
+			organizationBody["type"] = organization.Organization_Type
+		}
+
+		if organization.Industrial_Classification != "" {
+			organizationBody["industrialClassification"] = organization.Industrial_Classification
+		}
+
+		if organization.Industrial_Sector != "" {
+			organizationBody["industrialSector"] = organization.Industrial_Sector
+		}
+
+		if organization.Registration_Date != "" {
+			organizationBody["businessRegistrationDate"] = organization.Registration_Date // format("20230610")
+
+		}
+		if organization.BusinessType != "" {
+			organizationBody["businessType"] = organization.BusinessType
+		}
+
+		var UkhesheClient = configs.MakeAuthenticatedRequest(true)
+
+		var response, ukesheResponseError = UkhesheClient.Post("/organisations", organizationBody)
+
+		if ukesheResponseError != nil {
+			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   ukesheResponseError.Error(),
+			})
+			return
+		}
+
+		if response.Status != 200 {
+			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+			var responseBody []map[string]interface{}
+			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+				configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+				c.JSON(500, gin.H{
+					"success": false,
+					"error":   err.Error(),
+				})
+				return
+			}
+			c.JSON(response.Status, gin.H{
+				"success": false,
+				"error":   responseBody[0]["description"],
+			})
+			return
+		}
+
+		var responseBody map[string]interface{}
+
+		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
+			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		var version = responseBody["version"].(float64)
+		var organizationId = responseBody["organisationId"].(float64)
+
+		if err := configs.DB.Model(&models.Organization{}).Where("id = ?", organization.ID).Updates(map[string]interface{}{
+			"version":    version,
+			"ukheshe_id": organizationId,
+		}).Error; err != nil {
+			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		c.JSON(201, gin.H{
+			"success": true,
+			"data":    responseBody,
+		})
 
 	}
 }
@@ -425,7 +600,7 @@ func GetOrganizations() gin.HandlerFunc {
 			return
 		}
 
-		if err := configs.DB.Offset(offset).Limit(limitInt).Find(&organizations).Error; err != nil {
+		if err := configs.DB.Select("api_key, email, status, created_at, company_name, company_number, trading_name, industrial_sector, industrial_classification, phone_number1, phone_number2, organization_type, business_type").Order("created_at DESC").Offset(offset).Limit(limitInt).Find(&organizations).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
@@ -433,9 +608,20 @@ func GetOrganizations() gin.HandlerFunc {
 			return
 		}
 
+		var orgs []map[string]interface{}
+
+		for _, orga := range organizations {
+			// convert it into map
+			org := utils.StructToMap(orga)
+			org["created_at"] = time.Unix(orga.CreatedAt, 0)
+
+			orgs = append(orgs, org)
+
+		}
+
 		c.JSON(200, gin.H{
 			"message":       "Organizations retrieved successfully",
-			"organizations": organizations,
+			"organizations": orgs,
 			"metadata": map[string]interface{}{
 				"total": total,
 				"page":  pageInt,

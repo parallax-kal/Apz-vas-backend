@@ -20,7 +20,7 @@ func SignupAdmin() gin.HandlerFunc {
 
 		user.Role = "Admin"
 
-		if err := ValidateUser(user); err != nil {
+		if err := ValidateUser(user, true); err != nil {
 			ctx.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,

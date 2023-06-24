@@ -36,6 +36,11 @@ func InitializeUserRouters(router *gin.RouterGroup) {
 		middlewares.SuperAdminMiddleware(),
 		controllers.GetUsers(),
 	)
+	router.POST("/validate-org-data",
+		middlewares.AuthMiddleware(),
+		middlewares.AdminMiddleware(),
+		controllers.ValidateUserOrgData(),
+	)
 	router.GET("/me",
 		middlewares.PartialAuthMiddleware(),
 		controllers.GetUser(),
