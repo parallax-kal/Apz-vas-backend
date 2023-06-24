@@ -37,6 +37,7 @@ func SignupOrganizationContinue() gin.HandlerFunc {
 
 		organization.UserId = user.ID
 		organization.Email = user.Email
+		organization.Owner_Name = user.Name
 
 		if err := configs.DB.Create(&organization).Error; err != nil {
 			c.JSON(500, gin.H{

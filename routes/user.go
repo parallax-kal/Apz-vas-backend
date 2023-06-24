@@ -26,6 +26,9 @@ func InitializeUserRouters(router *gin.RouterGroup) {
 	)
 	router.POST("/signup", controllers.SignupOrganization())
 	router.GET("/verify", controllers.VerifyUser())
+	router.GET("/verify-reseting", controllers.VerifyBeforeResetingPassword())
+	router.PUT("/reset-password", controllers.ResetPassword())
+	router.POST("/forgot-password", controllers.ForgotPassword())
 	router.POST("/google-login", controllers.GoogleLogin())
 	router.POST("/google-signup", controllers.GoogleRegister())
 	router.GET("/get-users",

@@ -6,12 +6,12 @@ import (
 	"apz-vas/utils"
 	"encoding/json"
 	"errors"
+	"github.com/gin-gonic/gin"
+	"github.com/vicanso/go-axios"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
-	"github.com/gin-gonic/gin"
-	"github.com/vicanso/go-axios"
 )
 
 func GetUser() gin.HandlerFunc {
@@ -272,6 +272,212 @@ func LoginUser() gin.HandlerFunc {
 	}
 }
 
+func ForgotPassword() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var emailData map[string]interface{}
+
+		if err := c.ShouldBindJSON(&emailData); err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		if emailData["email"] == nil {
+			c.JSON(400, gin.H{
+				"error":   "Email is required.",
+				"success": false,
+			})
+			return
+		}
+
+		if err := utils.ValidateEmail(emailData["email"].(string)); err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		var user models.User
+
+		if err := configs.DB.Where("email = ?", emailData["email"].(string)).First(&user).Error; err != nil {
+			c.JSON(400, gin.H{
+				"error":   "Invalid Email!",
+				"success": false,
+			})
+			return
+		}
+
+		var token, err = utils.GenerateEmailToken(emailData["email"].(string), user.ID)
+
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		var link = os.Getenv("FRONTEND_URL") + "/reset-password?token=" + token
+
+		if err := utils.SendMail(emailData["email"].(string), "Reset Password", "Please click the link below to reset your password: \n"+link); err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"message": "Email sent successfully",
+			"success": true,
+		})
+
+	}
+}
+
+func VerifyBeforeResetingPassword() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var token = c.Request.Header.Get("Authorization")
+		var emailData, err = utils.ExtractEmailData(token)
+
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		var user models.User
+
+		if err := configs.DB.Where("email = ?", emailData.Email).First(&user).Error; err != nil {
+			c.JSON(400, gin.H{
+				"error":   "Invalid Email!",
+				"success": false,
+			})
+			return
+		}
+
+		var ticket, errf = utils.GenerateEmailToken(emailData.Email, user.ID)
+
+		if errf != nil {
+			c.JSON(500, gin.H{
+				"error":   errf.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"success": true,
+			"message": "Verified successfully",
+			"ticket":  ticket,
+		})
+
+	}
+}
+
+func ResetPassword() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var newPasswordData map[string]interface{}
+
+		if err := c.ShouldBindJSON(&newPasswordData); err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			c.Abort()
+			return
+		}
+
+		if newPasswordData["newPassword"] == nil {
+			c.JSON(400, gin.H{
+				"error":   "New Password is required.",
+				"success": false,
+			})
+			return
+		}
+
+		var ticket = c.Request.Header.Get("Authorization")
+		var emailData, err = utils.ExtractEmailData(ticket)
+
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		if err := utils.ValidatePassword(newPasswordData["newPassword"].(string)); err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			c.Abort()
+			return
+		}
+
+		var newPass, errf = utils.HashPassword(newPasswordData["newPassword"].(string))
+
+		if errf != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			c.Abort()
+			return
+		}
+
+		var user models.User
+
+		if err := configs.DB.Where("email = ?", emailData.Email).First(&user).Error; err != nil {
+			c.JSON(400, gin.H{
+				"error":   "Invalid Email!",
+				"success": false,
+			})
+			return
+		}
+
+		var passwords = strings.Split(user.Passwords, ",")
+
+		passwords[0] = newPass
+
+		var newPasss = strings.Join(passwords, ",")
+
+		if err := configs.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("passwords", newPasss).Error; err != nil {
+			c.JSON(400, gin.H{
+				"error":   "Invalid Email!",
+				"success": false,
+			})
+			return
+		}
+
+		var newToken, errr = utils.GenerateToken(utils.UserData{
+			ID:   user.ID,
+			Role: user.Role,
+		})
+
+		if errr != nil {
+			c.JSON(400, gin.H{
+				"error":   errr.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"success": true,
+			"message": "Password reset successfully",
+			"token":  newToken,
+		})
+
+	}
+}
+
 func VerifyUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
@@ -291,7 +497,7 @@ func VerifyUser() gin.HandlerFunc {
 		user.Email = userData.Email
 		user.Name = userData.Name
 		user.Role = userData.Role
-		
+
 		user.Passwords = strings.Join([]string{
 			userData.Password,
 			"",

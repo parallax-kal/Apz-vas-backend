@@ -9,6 +9,7 @@ type Organization struct {
 	UserId                    uuid.UUID `gorm:"<-;not null;type:uuid;foreignkey:user_id;references:ID" json:"user_id"`
 	APIKey                    uuid.UUID `gorm:"<-:create;unique;type:uuid;default:uuid_generate_v4()" json:"api_key"`
 	Company_Name              string    `gorm:"<-;unique;not null;type:varchar(255)" json:"company_name"`
+	Owner_Name                string    `gorm:"<-;not null;type:varchar(255)" json:"owner_name"`
 	Email                     string    `gorm:"<-;unique;not null;type:varchar(255)" json:"email"`
 	Company_Number            string    `gorm:"<-;unique;type:varchar(255)" json:"company_number"`
 	Phone_Number1             string    `gorm:"<-;unique;type:varchar(255)" json:"phone_number1"`
