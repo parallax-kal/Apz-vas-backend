@@ -48,10 +48,6 @@ func connectDb() *gorm.DB {
 	dsn := "host=" + DBHOST + " user=" + DBUSER + " password=" + DBPASS + " dbname=" + DBNAME + " port=" + DBPORT + " sslmode=disable TimeZone=Asia/Shanghai"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	//  drop all organization table
-	db.Exec("DROP TABLE users")
-	db.Exec("DROP TABLE admins")
-
-
 
 	if err != nil {
 		if strings.Contains(err.Error(), "database \""+DBNAME+"\" does not exist") {
