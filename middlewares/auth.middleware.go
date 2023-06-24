@@ -27,7 +27,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		
+
 		var user models.User
 
 		if err := configs.DB.Select("status, role, name, id", "email").Where("id = ?", userData.ID).First(&user).Error; err != nil {

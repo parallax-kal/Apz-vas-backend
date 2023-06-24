@@ -7,8 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-
 func GetVasProviders() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var vasProviders []models.VASProvider
@@ -162,47 +160,65 @@ func GetProviderServices() gin.HandlerFunc {
 }
 
 func UpdateVasProvider() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	return func(c *gin.Context) {
 		var vasProvider models.VASProvider
-		if err := ctx.ShouldBindJSON(&vasProvider); err != nil {
-			ctx.JSON(400, gin.H{
+		var vasProviderId = c.Query("providerId")
+		if err := c.ShouldBindJSON(&vasProvider); err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		if vasProvider.Status == "" {
+			if vasProvider.Name == "" {
+				c.JSON(400, gin.H{
+					"error":   "Name is required",
+					"success": false,
+				})
+				return
+			}
+			if len(vasProvider.Name) < 3 {
+				c.JSON(400, gin.H{
+					"error":   "Name must be at least 3 characters",
+					"success": false,
+				})
+				return
+			}
+			if vasProvider.Description == "" {
+				c.JSON(400, gin.H{
+					"error":   "Description is required",
+					"success": false,
+				})
+				return
+			}
+			if len(vasProvider.Description) < 3 {
+				c.JSON(400, gin.H{
+					"error":   "Description must be at least 3 characters",
+					"success": false,
+				})
+				return
+			}
+
+		} else {
+			if vasProvider.Status != "Active" && vasProvider.Status != "Inactive" {
+				c.JSON(400, gin.H{
+					"error":   "Invalid status",
+					"success": false,
+				})
+				return
+			}
+		}
+
+		if err := configs.DB.Model(&vasProvider).Where("id = ?", vasProviderId).Updates(&vasProvider).Error; err != nil {
+			c.JSON(400, gin.H{
 				"error":   err.Error(),
 				"success": false,
 			})
 		}
-		if vasProvider.Name == "" {
-			ctx.JSON(400, gin.H{
-				"error":   "Name is required",
-				"success": false,
-			})
-		}
-		if len(vasProvider.Name) < 3 {
-			ctx.JSON(400, gin.H{
-				"error":   "Name must be at least 3 characters",
-				"success": false,
-			})
-		}
-		if vasProvider.Description == "" {
-			ctx.JSON(400, gin.H{
-				"error":   "Description is required",
-				"success": false,
-			})
-		}
-		if len(vasProvider.Description) < 3 {
-			ctx.JSON(400, gin.H{
-				"error":   "Description must be at least 3 characters",
-				"success": false,
-			})
-		}
 
-		if err := configs.DB.Model(&vasProvider).Where("id = ?", vasProvider.ID).Updates(&vasProvider).Error; err != nil {
-			ctx.JSON(400, gin.H{
-				"error":   err.Error(),
-				"success": false,
-			})
-		}
-
-		ctx.JSON(200, gin.H{
+		c.JSON(200, gin.H{
 			"success": true,
 			"message": "VAS Provider updated successfully",
 		})
@@ -212,6 +228,37 @@ func UpdateVasProvider() gin.HandlerFunc {
 func UpdateProviderService() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// update
+
+	}
+}
+
+func DeleteVasProvider() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		var vasProviderId = c.Query("providerId")
+
+		if vasProviderId == "" {
+			c.JSON(400, gin.H{
+				"error":   "Provider ID is required",
+				"success": false,
+			})
+			return
+		}
+
+		var vasProvider models.VASProvider
+
+		if err := configs.DB.Where("id = ?", vasProviderId).Delete(&vasProvider).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"success": true,
+			"message": "VAS Provider deleted successfully",
+		})
 
 	}
 }

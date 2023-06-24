@@ -3,11 +3,13 @@ package configs
 import (
 	"apz-vas/models"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	_ "github.com/joho/godotenv/autoload"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"os"
-	"strings"
 )
 
 var DB = connectDb()
@@ -88,6 +90,7 @@ func connectDb() *gorm.DB {
 
 	fmt.Println("Connected to database successfully")
 	migrate(db)
+	seed(db)
 	return db
 }
 
@@ -107,7 +110,7 @@ func seed(db *gorm.DB) {
 		if newService.Error != nil {
 			fmt.Println(newService.Error)
 		}
-
+		time.Sleep(1 * time.Second)
 	}
 }
 

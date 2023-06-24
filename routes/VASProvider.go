@@ -31,4 +31,10 @@ func InitializeVASProviderRoutes(router *gin.RouterGroup) {
 		controllers.UpdateProviderService(),
 	)
 
+	router.DELETE("/delete-vas-provider",
+	middlewares.AuthMiddleware(),
+	middlewares.AdminMiddleware(),
+	controllers.DeleteVasProvider(),
+)
+
 }

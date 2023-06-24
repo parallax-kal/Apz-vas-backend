@@ -82,7 +82,7 @@ func GetAdminVASServices() gin.HandlerFunc {
 			return
 		}
 
-		if err := configs.DB.Select("id, name, description, provider_id, rebate, status").Offset(offset).Limit(limitInt).Find(&vas_services).Error; err != nil {
+		if err := configs.DB.Select("id, name, description, provider_id, rebate, status, created_at").Order("created_at DESC").Offset(offset).Limit(limitInt).Find(&vas_services).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
@@ -223,7 +223,18 @@ func GetOrganizationVASServices() gin.HandlerFunc {
 
 func UpdateVasService() gin.HandlerFunc {
 	return func(c *gin.Context) {
+
+		var serviceid = c.Query("serviceId")
+
+		if serviceid == "" {
+			c.JSON(400, gin.H{
+				"success": false,
+				"error":   "Service Id is required",
+			})
+		}
+
 		var vasService models.VASService
+
 		if err := c.ShouldBindJSON(&vasService); err != nil {
 			c.JSON(400, gin.H{
 				"error":   err.Error(),
@@ -232,7 +243,7 @@ func UpdateVasService() gin.HandlerFunc {
 			return
 		}
 
-		if err := configs.DB.Model(&vasService).Where("id = ?", vasService.ID).Updates(&vasService).Error; err != nil {
+		if err := configs.DB.Model(&vasService).Where("id = ?", serviceid).Updates(&vasService).Error; err != nil {
 			c.JSON(400, gin.H{
 				"error":   "VAS Service not found",
 				"success": false,
@@ -311,8 +322,7 @@ type VasServiceTransaction struct {
 }
 
 func GetVasServiceAdminTransactionHistory() gin.HandlerFunc {
-	return func(c*gin.Context) {
-
+	return func(c *gin.Context) {
 
 		page, limit := c.Query("page"), c.Query("limit")
 
@@ -371,7 +381,6 @@ func GetVasServiceAdminTransactionHistory() gin.HandlerFunc {
 			})
 			return
 		}
-		
 
 		c.JSON(200, gin.H{
 			"message":                  "VAS Service Transaction History retrieved successfully.",
@@ -481,5 +490,34 @@ func GetVasServiceTransactionHistory() gin.HandlerFunc {
 			},
 		},
 		)
+	}
+}
+
+func DeleteVasService() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		var serverId = c.Query("serviceId")
+
+		if serverId == "" {
+			c.JSON(400, gin.H{
+				"error":   "Service ID is required",
+				"success": false,
+			})
+			return
+		}
+
+		var service models.VASService
+
+		if err := configs.DB.Where("id = ?", serverId).Delete(&service).Error; err != nil {
+			c.JSON(400, gin.H{
+				"error":   "VAS Service not found",
+				"success": false,
+			})
+			return
+		}
+		c.JSON(200, gin.H{
+			"message": "VAS Service deleted successfully",
+			"success": true,
+		})
 	}
 }

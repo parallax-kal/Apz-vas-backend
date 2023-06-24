@@ -184,6 +184,15 @@ func GoogleRegister() gin.HandlerFunc {
 			return
 		}
 
+		if err := utils.SendMail(user.Email, "Welcome to APZ", "Welcome to APZ. We are glad to have you on board"); err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"success": false,
+			})
+
+			return
+		}
+
 		c.JSON(201, gin.H{
 			"message": "User registered successfully",
 			"success": true,
@@ -304,7 +313,7 @@ func ForgotPassword() gin.HandlerFunc {
 
 		if err := configs.DB.Where("email = ?", emailData["email"].(string)).First(&user).Error; err != nil {
 			c.JSON(400, gin.H{
-				"error":   "Invalid Email!",
+				"error":   "User with this email does not exist!",
 				"success": false,
 			})
 			return
@@ -593,8 +602,8 @@ func CreateUser(user models.User) (*models.User, error) {
 			return nil, err
 		}
 		user.Passwords = "," + newPass
-	} 
-	
+	}
+
 	if err := configs.DB.Create(&user).Error; err != nil {
 		return nil, err
 	}
