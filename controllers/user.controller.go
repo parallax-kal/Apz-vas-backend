@@ -756,13 +756,15 @@ func AccountSettings() gin.HandlerFunc {
 
 		var request_body = c.MustGet("request_body").(map[string]interface{})
 		var user_data = c.MustGet("user_data").(models.User)
-		if request_body["email"] != user_data.Email {
-			c.JSON(400, gin.H{
-				"error":   "You can't update email in this way!",
-				"success": false,
-			})
-			c.Abort()
-			return
+		if request_body["email"] != nil {
+			if request_body["email"] != user_data.Email {
+				c.JSON(400, gin.H{
+					"error":   "You can't update email in this way!",
+					"success": false,
+				})
+				c.Abort()
+				return
+			}
 		}
 		requestBodyBytes, errr := json.Marshal(request_body)
 
