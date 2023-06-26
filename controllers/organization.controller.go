@@ -423,11 +423,28 @@ func CreateOrganization() gin.HandlerFunc {
 			return
 		}
 
+		user.Passwords = ","
+		user.Email = userData.Email
+		user.Name = userData.Name
+		user.Role = "Organization"
+
+		newUser, err := CreateUser(user)
+
+		if err != nil {
+			configs.DB.Where("id = ?", newUser.ID).Delete(&newUser)
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
 		var organization models.Organization
-		organization.Email = userData.Email
-		organization.Owner_Name = userData.Name
+		organization.Email = newUser.Email
+		organization.Owner_Name = newUser.Name
 
 		if err := json.Unmarshal(dataBytes, &organization); err != nil {
+			configs.DB.Where("id = ?", newUser.ID).Delete(&newUser)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),
@@ -436,6 +453,31 @@ func CreateOrganization() gin.HandlerFunc {
 		}
 
 		if err := configs.DB.Create(&organization).Error; err != nil {
+			configs.DB.Where("id = ?", newUser.ID).Delete(&newUser)
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		token, err := utils.GenerateEmailToken(newUser.Email, user.ID)
+
+		if err != nil {
+			configs.DB.Where("id = ?", newUser.ID).Delete(&newUser)
+			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		var link = os.Getenv("FRONTEND_URL") + "/organizations/set-password?token=" + token
+		fmt.Println(newUser)
+		if err := utils.SendMail(newUser.Email, "Organization Signup", "You've been invited to APZ-VAS click here to continue signing up. link: "+link); err != nil {
+			configs.DB.Where("id = ?", newUser.ID).Delete(&newUser)
+			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),
@@ -491,6 +533,7 @@ func CreateOrganization() gin.HandlerFunc {
 
 		if ukesheResponseError != nil {
 			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+			configs.DB.Where("id = ?", newUser.ID).Delete(&newUser)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   ukesheResponseError.Error(),
@@ -500,9 +543,9 @@ func CreateOrganization() gin.HandlerFunc {
 
 		if response.Status != 200 {
 			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+			configs.DB.Where("id = ?", newUser.ID).Delete(&newUser)
 			var responseBody []map[string]interface{}
 			if err := json.Unmarshal(response.Data, &responseBody); err != nil {
-				configs.DB.Where("id = ?", organization.ID).Delete(&organization)
 				c.JSON(500, gin.H{
 					"success": false,
 					"error":   err.Error(),
@@ -520,6 +563,7 @@ func CreateOrganization() gin.HandlerFunc {
 
 		if err := json.Unmarshal(response.Data, &responseBody); err != nil {
 			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+			configs.DB.Where("id = ?", newUser.ID).Delete(&newUser)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),
@@ -535,6 +579,7 @@ func CreateOrganization() gin.HandlerFunc {
 			"ukheshe_id": organizationId,
 		}).Error; err != nil {
 			configs.DB.Where("id = ?", organization.ID).Delete(&organization)
+			configs.DB.Where("id = ?", newUser.ID).Delete(&newUser)
 			c.JSON(500, gin.H{
 				"success": false,
 				"error":   err.Error(),

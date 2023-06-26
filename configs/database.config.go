@@ -90,7 +90,6 @@ func connectDb() *gorm.DB {
 
 	fmt.Println("Connected to database successfully")
 	migrate(db)
-	seed(db)
 	return db
 }
 
@@ -100,6 +99,7 @@ func seed(db *gorm.DB) {
 		if newProvider.Error != nil {
 			fmt.Println(newProvider.Error)
 		}
+		time.Sleep(1 * time.Second)
 	}
 
 	var providers []models.VASProvider
