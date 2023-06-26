@@ -380,7 +380,73 @@ func UpdateOrganization() gin.HandlerFunc {
 }
 
 func DeleteOrganization() gin.HandlerFunc {
-	return func(c *gin.Context) {}
+	return func(c *gin.Context) {
+
+		var organizationId = c.Query("organizationId")
+		if organizationId == "" {
+			c.JSON(400, gin.H{
+				"success": false,
+				"error":   "Organization id is required",
+			})
+			return
+		}
+
+		var organization models.Organization
+
+		if err := configs.DB.Select("id, user_id, ukheshe_id").Where("id = ?", organizationId).First(&organization).Error; err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		if err := configs.DB.Model(&models.Organization{}).Where("id = ?", organizationId).Error; err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		var user models.User
+
+		if err := configs.DB.Where("id = ?", organization.UserId).Delete(user).Error; err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		// https://eclipse-java-sandbox.ukheshe.rocks/eclipse-conductor/rest/v1/tenants/{tenantId}/organisations/{organisationId}
+		fmt.Println(organization)
+		var ukheshe_client = configs.MakeAuthenticatedRequest(true)
+		var response, ukesheResponseError = ukheshe_client.Delete("/organisations/" + utils.ConvertIntToString(int(organization.Ukheshe_Id)))
+
+		if ukesheResponseError != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   ukesheResponseError.Error(),
+			})
+			return
+		}
+
+		if response.Status != 204 {
+			fmt.Println(response.Status)
+			c.JSON(500, gin.H{
+				"success": false,
+				"error":   "Error deleting organization",
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"success": true,
+			"message": "Organization deleted successfully",
+		})
+
+	}
 }
 
 func CreateOrganization() gin.HandlerFunc {
@@ -440,6 +506,7 @@ func CreateOrganization() gin.HandlerFunc {
 		user.Email = userData.Email
 		user.Name = userData.Name
 		user.Role = "Organization"
+		user.Status = "Pending"
 
 		newUser, err := CreateUser(user)
 
@@ -455,6 +522,7 @@ func CreateOrganization() gin.HandlerFunc {
 		var organization models.Organization
 		organization.Email = newUser.Email
 		organization.Owner_Name = newUser.Name
+		organization.Status = "Pending"
 
 		if err := json.Unmarshal(dataBytes, &organization); err != nil {
 			configs.DB.Where("id = ?", newUser.ID).Delete(&newUser)

@@ -515,6 +515,7 @@ func DeleteVasService() gin.HandlerFunc {
 			})
 			return
 		}
+		
 		c.JSON(200, gin.H{
 			"message": "VAS Service deleted successfully",
 			"success": true,
