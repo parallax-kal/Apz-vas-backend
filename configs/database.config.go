@@ -87,17 +87,10 @@ func connectDb() *gorm.DB {
 			panic(err)
 		}
 	}
-	fmt.Println("Connected to database successfully")
-	fmt.Println("Enabling uuid-ossp extension...")
-	err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Enabled uuid-ossp extension successfully")
+	
 
 	fmt.Println("Connected to database successfully")
 	migrate(db)
-	seed(db)
 	return db
 }
 
