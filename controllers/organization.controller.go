@@ -230,7 +230,15 @@ func UpdateOrganization() gin.HandlerFunc {
 		}
 
 		var org models.Organization
-
+		if request_body["name"] != nil {
+			org.Owner_Name = request_body["name"].(string)
+		}
+		if request_body["email"] != nil {
+			c.JSON(400, gin.H{
+				"success": false,
+				"error":   "You cannot update your email in this way.",
+			})
+		}
 		if errf := json.Unmarshal(requestBodyBytes, &org); errf != nil {
 			c.JSON(500, gin.H{
 				"success": false,
@@ -241,6 +249,11 @@ func UpdateOrganization() gin.HandlerFunc {
 		var ukheshe_client = configs.MakeAuthenticatedRequest(true)
 
 		var organizationBody = make(map[string]interface{})
+		if org.Email != "" {
+			organizationBody["email"] = org.Email
+		} else {
+			organizationBody["email"] = nil
+		}
 		if org.Company_Name != "" {
 			organizationBody["name"] = org.Company_Name
 		} else {
@@ -645,7 +658,7 @@ func GetOrganizations() gin.HandlerFunc {
 			return
 		}
 
-		if err := configs.DB.Select("api_key, email, status, created_at, company_name, company_number, trading_name, industrial_sector, industrial_classification, phone_number1, phone_number2, organization_type, business_type, id, tax_number").Order("created_at DESC").Offset(offset).Limit(limitInt).Find(&organizations).Error; err != nil {
+		if err := configs.DB.Select("api_key, email, status, created_at, company_name, company_number, trading_name, industrial_sector, industrial_classification, phone_number1, phone_number2, organization_type, business_type, id, tax_number, owner_name").Order("created_at DESC").Offset(offset).Limit(limitInt).Find(&organizations).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
