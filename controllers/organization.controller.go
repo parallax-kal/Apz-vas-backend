@@ -645,7 +645,7 @@ func GetOrganizations() gin.HandlerFunc {
 			return
 		}
 
-		if err := configs.DB.Select("api_key, email, status, created_at, company_name, company_number, trading_name, industrial_sector, industrial_classification, phone_number1, phone_number2, organization_type, business_type, id").Order("created_at DESC").Offset(offset).Limit(limitInt).Find(&organizations).Error; err != nil {
+		if err := configs.DB.Select("api_key, email, status, created_at, company_name, company_number, trading_name, industrial_sector, industrial_classification, phone_number1, phone_number2, organization_type, business_type, id, tax_number").Order("created_at DESC").Offset(offset).Limit(limitInt).Find(&organizations).Error; err != nil {
 			c.JSON(500, gin.H{
 				"error":   err.Error(),
 				"success": false,
