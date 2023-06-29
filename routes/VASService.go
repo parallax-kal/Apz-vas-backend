@@ -10,8 +10,7 @@ import (
 func InitializeVASServiceRoutes(router *gin.RouterGroup) {
 
 	router.GET("/get-vas-services",
-		middlewares.OrganizationAPIMiddleware(),
-		controllers.GetOrganizationVASServices(),
+		controllers.GetVasServices(),
 	)
 
 	router.GET("/get-organization-vas-services",
