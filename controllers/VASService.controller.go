@@ -493,6 +493,78 @@ func GetVasServiceTransactionHistory() gin.HandlerFunc {
 	}
 }
 
+func GetVasServices() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		page, limit := c.Query("page"), c.Query("limit")
+		if page == "" {
+			c.JSON(400, gin.H{
+				"error":   "Page is required",
+				"success": false,
+			})
+			return
+		}
+		if limit == "" {
+			c.JSON(400, gin.H{
+				"error":   "Limit is required",
+				"success": false,
+			})
+			return
+		}
+		pageInt := utils.ConvertStringToInt(page)
+		limitInt := utils.ConvertStringToInt(limit)
+
+		if pageInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid page numer",
+				"success": false,
+			})
+			return
+		}
+
+		if limitInt <= 0 {
+			c.JSON(400, gin.H{
+				"error":   "Invalid limit numer",
+				"success": false,
+			})
+			return
+		}
+
+		offset := utils.GetOffset(pageInt, limitInt)
+		// get offset
+		var total int64
+		var vas_services []models.VASService
+
+		if err := configs.DB.Model(&models.VASService{}).Count(&total).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   "An error occurred. Please try again or contact admin",
+				"success": false,
+			})
+			return
+		}
+
+		if err := configs.DB.Select("id, name, description, provider_id, rebate, status").Offset(offset).Limit(limitInt).Find(&vas_services).Error; err != nil {
+			c.JSON(500, gin.H{
+				"error":   "An error occurred. Please try again.",
+				"success": false,
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"success":      true,
+			"message":      "VAS Services retrieved successfully",
+			"vas_services": vas_services,
+			"metadata": map[string]interface{}{
+				"total": total,
+				"page":  pageInt,
+				"limit": limitInt,
+			},
+		})
+
+	}
+}
+
 func DeleteVasService() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
@@ -515,7 +587,7 @@ func DeleteVasService() gin.HandlerFunc {
 			})
 			return
 		}
-		
+
 		c.JSON(200, gin.H{
 			"message": "VAS Service deleted successfully",
 			"success": true,

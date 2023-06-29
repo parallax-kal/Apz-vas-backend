@@ -39,5 +39,5 @@ func main() {
 
 	// router.SetTrustedProxies(nil)
 
-	router.Run(":5000")
+	router.Run("0.0.0.0:5000")
 }

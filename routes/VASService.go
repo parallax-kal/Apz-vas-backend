@@ -14,6 +14,11 @@ func InitializeVASServiceRoutes(router *gin.RouterGroup) {
 		controllers.GetOrganizationVASServices(),
 	)
 
+	router.GET("/get-organization-vas-services",
+		middlewares.OrganizationAPIMiddleware(),
+		controllers.GetOrganizationVASServices(),
+	)
+
 	router.GET("/get-admin-vas-services",
 		middlewares.AuthMiddleware(),
 		middlewares.AdminMiddleware(),
